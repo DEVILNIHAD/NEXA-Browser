@@ -1,22 +1,22 @@
 package com.devilnihad.nexabrowser.utils
 
-import android.net.Uri
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 object UrlResolver {
-    fun resolve(input: String, searchEngine: String): String {
-        val value = input.trim()
-        if (value.isEmpty()) return "about:home"
-        if (value.equals("about:home", ignoreCase = true)) return value
-        if (value.startsWith("http://") || value.startsWith("https://")) return value
+    fun resolve(input: String, search: String): String {
+        val s = input.trim()
+        if (s.isEmpty()) return "about:home"
+        if (s.equals("about:home", ignoreCase = true)) return s
+        if (s.startsWith("http://") || s.startsWith("https://")) return s
+        if (s.startsWith("mailto:") || s.startsWith("tel:") || s.startsWith("sms:") || s.startsWith("geo:")) return s
 
-        val parsed = Uri.parse(value)
-        if (!parsed.scheme.isNullOrEmpty()) return value
-
-        val looksLikeDomain = value.contains('.') && !value.contains(' ')
-        return if (looksLikeDomain) {
-            "https://$value"
+        val looksLikeHost = s.contains('.') && !s.contains(' ')
+        return if (looksLikeHost) {
+            "https://$s"
         } else {
-            searchEngine + Uri.encode(value)
+            val encoded = URLEncoder.encode(s, StandardCharsets.UTF_8.toString())
+            search + encoded.replace("+", "%20")
         }
     }
 }
