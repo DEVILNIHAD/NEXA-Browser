@@ -35,7 +35,7 @@ assignees: ''
 ## 📷 Screenshots / Logcat
 
 <!-- Add screenshots or paste logcat output here -->
-<!-- adb logcat -s BrowserViewModel OmniApp -->
+<!-- adb logcat -s BrowserViewModel NEXAApp -->
 
 ## 🔁 Does it happen every time?
 

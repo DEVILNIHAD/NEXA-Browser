@@ -16,15 +16,15 @@ AMO extension install. That is a real moat.
 However, the audit found **most "everyday browser" features that users take for granted are
 missing or only half-wired**, and several flagship features are **marketing-false** (VPN is a
 no-op stub, FFmpeg is simulated, "offline ML translation" is actually an online Google API,
-the lock icon is faked from the URL scheme). Before Omni can compete as a primary browser, the
+the lock icon is faked from the URL scheme). Before NEXA can compete as a primary browser, the
 ranking below should drive the roadmap.
 
 Headline verdicts vs. mainstream:
 
-| Capability domain | Omni vs. mainstream |
+| Capability domain | NEXA vs. mainstream |
 |---|---|
 | Privacy tooling (Tor, vault, burn, adblock) | **Ahead** on gadgets, **behind** on fundamentals (no real per-site cookies, weak adblock engine, fake security indicator) |
-| Core browsing UX (omnibox, tabs, sync, cast) | **Well behind** Chrome/Firefox/Edge |
+| Core browsing UX (nexabox, tabs, sync, cast) | **Well behind** Chrome/Firefox/Edge |
 | Media & download power | **Ahead** (native player, HLS sniffer) but contains broken advertisements ("FFmpeg", DASH download) |
 | Extensions | **Ahead** (AMO install + bundled MV2) — rivals only Firefox |
 | Identity & auth (passkeys, real TLS state) | **Critically behind** — completely absent |
@@ -36,7 +36,7 @@ Headline verdicts vs. mainstream:
 
 Legend: ✅ implemented / 🟡 partial / ❌ missing / 🟥 **broken** (advertised but not working)
 
-| Feature | Omni | Chrome | Firefox | Brave | Edge | Safari* | Samsung |
+| Feature | NEXA | Chrome | Firefox | Brave | Edge | Safari* | Samsung |
 |---|---|---|---|---|---|---|---|
 | **Cross-device sync** (bookmarks/history/passwords/tabs) | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Passkeys / WebAuthn** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
@@ -75,7 +75,7 @@ Legend: ✅ implemented / 🟡 partial / ❌ missing / 🟥 **broken** (advertis
 
 ---
 
-## 3. Where Mainstream Browsers Beat Omni (with code evidence)
+## 3. Where Mainstream Browsers Beat NEXA (with code evidence)
 
 ### 3.1 Critical — fixes a product can’t grow without
 
@@ -134,7 +134,7 @@ with no master-password prompt (`BrowserViewModel.kt:2903`), and `changeMasterPa
 swaps the stored key without re-encrypting the SQLCipher DB — it would corrupt the vault and is
 dead code (`tools/passwords/MasterPasswordManager.kt:217-231`).
 
-**H4. Background media is broken / dead code.** `OmniMediaService.kt` (MediaSessionService) is
+**H4. Background media is broken / dead code.** `NEXAMediaService.kt` (MediaSessionService) is
 referenced nowhere and **missing from AndroidManifest.xml** — no lock-screen media controls, no
 true background playback, despite a background-playback toggle. Fix by registering the service
 in the manifest and starting it from the player for background/PiP audio (Samsung Video
@@ -162,10 +162,10 @@ standalone HTTPS-Only doesn’t survive a restart. No exception list.
 
 ### 3.3 Medium — polish that mainstream browsers treat as baseline
 
-- **Omnibox suggestions/autocomplete** only exist on the home search bar
+- **NEXAbox suggestions/autocomplete** only exist on the home search bar
 (`HomeScreenContent.kt:220`); the in-page address bar is a plain `BasicTextField` with no
 dropdown (`PhoneAddressBar.kt:462-488`). This is the #1 "feels cheap" gap vs Chrome.
-- **Voice search** exists only on the home bar, not the omnibox.
+- **Voice search** exists only on the home bar, not the nexabox.
 - **Tab search, drag-to-reorder tabs** — absent (`BrowserScreen.kt:4000-4700`).
 - **Send tab / send-to-device** — absent (blocks on sync).
 - **Android home-screen widget** (search widget) — absent (`grep AppWidgetProvider` → none).
@@ -183,7 +183,7 @@ Containers" is a disabled row (`PrivacyHubScreen.kt:912`).
 LLM summarization would differentiate; at minimum add a "Summarize with a local model" to
 reader mode.
 
-### 3.4 Where Omni already beats mainstream (protect this moat)
+### 3.4 Where NEXA already beats mainstream (protect this moat)
 
 - **Embedded Tor daemon**, real kmp-tor with NEWNYM and leak-aware config
 (`privacy/EmbeddedTorManager.kt`) — better in-app than Brave (only global, not per-window).
@@ -216,8 +216,8 @@ beyond Chrome/Firefox.
 6. **Encrypted sync + send-to-device** — start with bookmarks+history+open tabs via a minimal
    backend or accountless sync chain (Brave model, no account = fits the privacy brand). *C1*
 7. **Passkeys/WebAuthn** — critical for adoption as default browser. *C2*
-8. Omnibox suggestions + URL autocomplete + voice search in the address bar. *M*
-9. Register OmniMediaService, add lock-screen controls & reliable background audio; restore
+8. NEXAbox suggestions + URL autocomplete + voice search in the address bar. *M*
+9. Register NEXAMediaService, add lock-screen controls & reliable background audio; restore
    auto-PiP. *H4*
 10. Full bookmarks/history export + improved backup. *H6*
 
@@ -230,7 +230,7 @@ beyond Chrome/Firefox.
 15. Fix DASH download + real audio extraction; ship real FFmpeg or remove claims. *H5*
 16. Home-screen search widget; offline news cache. *M*
 
-> **Theme for positioning:** Omni should lean into what no mainstream browser will do —
+> **Theme for positioning:** NEXA should lean into what no mainstream browser will do —
 > *embedded Tor, encrypted local vault, media grabber, AMO extensions* — and use P0 fixes to
 > remove the credibility gaps (fake lock, fake VPN, fake offline translation, fake FFmpeg).
 > Honesty in the README about these four would build more trust than the current claims
@@ -246,17 +246,17 @@ beyond Chrome/Firefox.
   `tools/passwords/PasswordDatabase.kt:87`
 - Cookie mapping bug: `settings/PrivacySecurityScreen.kt:491-494` vs `BrowserViewModel.kt:2605,2627,5434`
 - Adblock mechanics: `browser/adblock/AdBlockManager.kt:114,245-301,361-369`
-- Background media dead: `media/player/OmniMediaService.kt`; manifest has no service entry
+- Background media dead: `media/player/NEXAMediaService.kt`; manifest has no service entry
 - FFmpeg simulation: `media/FFmpegLoader.kt:215-234`; `media/FFmpegBridge.kt:52-55`
 - DASH/audio download bugs: `media/StreamDownloadEngine.kt:447-451`; `VideoPlayerScreen.kt:1806-1820`
 - Password audit stub: `BrowserViewModel.kt:7738-7743`; auto-unlock `BrowserViewModel.kt:2903`
 - Master-password corruption path: `tools/passwords/MasterPasswordManager.kt:217-231`
-- Omnibox no suggestions: `browser/PhoneAddressBar.kt:462-488` vs `HomeScreenContent.kt:220`
+- NEXAbox no suggestions: `browser/PhoneAddressBar.kt:462-488` vs `HomeScreenContent.kt:220`
 - HTTPS-only overwrite: `BrowserViewModel.kt:2622` vs `:5430`
 - Translation is online gtx: `tools/TranslationManager.kt:66`
 
 ## Appendix B — Where facts came from
-- Omni: full-source audit (3 passes: core browsing, privacy/security, media/tools),
+- NEXA: full-source audit (3 passes: core browsing, privacy/security, media/tools),
   2026-08-12.
 - Comparators: product documentation (Brave.com/features), Wikipedia (Chrome/Firefox), and
   feature knowledge of Chrome/Edge/Safari/Samsung; re-verify before making roadmap bets.

@@ -1,18 +1,5 @@
-# NEXA Browser
-
-> A NEXA-branded derivative of Omni Browser, with a premium browser UI and the original browser engine/features retained.
-
-**Package:** `com.devilnihad.nexabrowser`  
-**Version:** `2.0.0`
-
-NEXA branding and modifications are by **DEVIL NIHAD**.
-
-Upstream source: https://github.com/REBEL-ROOT/omni-browser
-
----
-
 <div align="center">
-  <img src="app/src/main/res/drawable-nodpi/omni_home_logo.webp" alt="NEXA Browser Logo" width="140" />
+  <img src="app/src/main/res/drawable-nodpi/nexa_home_logo.webp" alt="NEXA Browser Logo" width="140" />
 
   <h1>NEXA Browser</h1>
 
@@ -22,18 +9,18 @@ Upstream source: https://github.com/REBEL-ROOT/omni-browser
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4CAF50?style=for-the-badge&logo=android&logoColor=white" /></a>
   <a href="https://mozilla.github.io/geckoview/"><img src="https://img.shields.io/badge/Engine-GeckoView%20v154-FF7139?style=for-the-badge&logo=firefox&logoColor=white" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge" /></a>
-  <a href="https://github.com/REBEL-ROOT/omni-browser/releases"><img src="https://img.shields.io/github/v/release/REBEL-ROOT/omni-browser?style=for-the-badge&color=success" /></a>
-  <a href="https://github.com/REBEL-ROOT/omni-browser/issues"><img src="https://img.shields.io/github/issues/REBEL-ROOT/omni-browser?style=for-the-badge" /></a>
-  <a href="https://www.linkedin.com/company/rebelroot"><img src="https://img.shields.io/badge/LinkedIn-RebelRoot-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" /></a>
-  <a href="https://ko-fi.com/rebelroot"><img src="https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" /></a>
+  <a href="https://github.com/DEVILNIHAD/NEXA-Browser/releases"><img src="https://img.shields.io/github/v/release/DEVILNIHAD/NEXA-Browser?style=for-the-badge&color=success" /></a>
+  <a href="https://github.com/DEVILNIHAD/NEXA-Browser/issues"><img src="https://img.shields.io/github/issues/DEVILNIHAD/NEXA-Browser?style=for-the-badge" /></a>
+  <a href="https://www.linkedin.com/company/devilnihad"><img src="https://img.shields.io/badge/LinkedIn-DEVILNIHAD-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" /></a>
+  <a href="https://ko-fi.com/devilnihad"><img src="https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" /></a>
 
   <br /><br />
 
-  <a href="https://github.com/REBEL-ROOT/omni-browser/releases/latest">
+  <a href="https://github.com/DEVILNIHAD/NEXA-Browser/releases/latest">
     <img src="https://img.shields.io/badge/⬇%20Download%20APK-Latest%20Release-0a84ff?style=for-the-badge" />
   </a>
  <br /><br />
-<a href="https://play.google.com/store/apps/details?id=com.devilnihad.nexabrowser">
+<a href="https://play.google.com/store/apps/details?id=com.devilnihad.nexa">
   <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80" />
 </a>
  
@@ -42,7 +29,7 @@ Upstream source: https://github.com/REBEL-ROOT/omni-browser
 
 <div align="center">
   <a href="https://trendshift.io/repositories/78924?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-78924" target="_blank" rel="noopener noreferrer">
-    <img src="https://trendshift.io/api/badge/trendshift/repositories/78924/daily?language=Kotlin" alt="REBEL-ROOT%2Fomni-browser | Trendshift" width="250" height="55"/>
+    <img src="https://trendshift.io/api/badge/trendshift/repositories/78924/daily?language=Kotlin" alt="DEVILNIHAD%2FNEXA-Browser | Trendshift" width="250" height="55"/>
   </a>
 </div>
 
@@ -54,7 +41,7 @@ Upstream source: https://github.com/REBEL-ROOT/omni-browser
 > NEXA Browser is currently in **active development and experimental phase**. Features may be incomplete, unstable, or subject to significant change without notice. You may encounter bugs, crashes, or unexpected behaviour.
 >
 > - ⚠️ **Not recommended as your sole/primary browser yet**
-> - 🐛 **Bugs are expected** — please [report them](https://github.com/REBEL-ROOT/omni-browser/issues)
+> - 🐛 **Bugs are expected** — please [report them](https://github.com/DEVILNIHAD/NEXA-Browser/issues)
 > - 🔄 **APIs and features may change** between releases
 > - 💾 **Back up any important data** stored in the app (vault, notes)
 >
@@ -76,9 +63,9 @@ Upstream source: https://github.com/REBEL-ROOT/omni-browser
 
 ## ✨ Overview
 
-**NEXA Browser** is a state-of-the-art mobile web browser built by **RebelRoot** — an independent development collective focused on privacy, performance, and open-source freedom.
+**NEXA Browser** is a state-of-the-art mobile web browser maintained by **DEVILNIHAD** focused on privacy, performance, and open-source freedom.
 
-Powered by **Mozilla GeckoView** (the same engine behind Firefox), Omni delivers desktop-grade browsing, native Firefox WebExtension support, hardware-decoded media playback, and a built-in tools suite (QR tools, translator, developer console, PDF export) — all wrapped in a premium OLED-dark Jetpack Compose interface.
+Powered by **Mozilla GeckoView** (the same engine behind Firefox), NEXA delivers desktop-grade browsing, native Firefox WebExtension support, hardware-decoded media playback, and a built-in tools suite (QR tools, translator, developer console, PDF export) — all wrapped in a premium OLED-dark Jetpack Compose interface.
 
 ---
 
@@ -88,7 +75,7 @@ Powered by **Mozilla GeckoView** (the same engine behind Firefox), Omni delivers
 | Feature | Details |
 |---|---|
 | **Smart Home Screen** | Search bar, quick-access site shortcuts, Discover news feed (Trending, World, Technology, Sports) |
-| **Quick Access Grid** | Pinned shortcuts to RebelRoot, Twitter, Spotify, Amazon, Pinterest + Downloads, History, Bookmarks |
+| **Quick Access Grid** | Pinned shortcuts to DEVILNIHAD, Twitter, Spotify, Amazon, Pinterest + Downloads, History, Bookmarks |
 | **Incognito Shortcut** | One-tap incognito launch directly from the home screen |
 | **Multi-Tab** | Chrome-like tab strip with open tab count indicator |
 
@@ -129,7 +116,7 @@ Powered by **Mozilla GeckoView** (the same engine behind Firefox), Omni delivers
 | Feature | Details |
 |---|---|
 | **Stream Sniffer** | Captures HLS, DASH, MP4, and MSE streams automatically |
-| **Omni Player** | ExoPlayer with swipe gestures, speed control, PiP, background audio |
+| **NEXA Player** | ExoPlayer with swipe gestures, speed control, PiP, background audio |
 | **Player Settings** | Configurable player behavior from the browser menu |
 
 ### ⚙️ Settings
@@ -138,17 +125,17 @@ Powered by **Mozilla GeckoView** (the same engine behind Firefox), Omni delivers
 | **Dark Mode** | OLED-black dark theme across the entire app |
 | **Accent Color** | Choose from 5 accent colors (blue, red, green, orange, purple) |
 | **PDF Export Theme** | System Default / Light / Dark PDF rendering |
-| **Native Video Player** | Open videos in Omni Player with auto-download support |
+| **Native Video Player** | Open videos in NEXA Player with auto-download support |
 | **Private Browsing** | Block all trackers and cookies globally |
 | **AI Blocker** | Block generative search summaries completely |
-| **Default Browser** | Set Omni as your system default browser |
+| **Default Browser** | Set NEXA as your system default browser |
 | **App Language** | Multi-language support with global locale switching |
 
-### 🔄 Omni Sync
+### 🔄 NEXA Sync
 | Feature | Details |
 |---|---|
-| **Firefox Cloud Sync** | Not available. Mozilla grants Firefox Accounts OAuth and Sync access only on request and does not grant it to third-party browsers, so Omni cannot join Mozilla's cloud. |
-| **Omni Sync Mesh** | Zero-cloud 100% E2EE local Wi-Fi sync between Omni and desktop Firefox (requires the desktop Omni Sync Extension) |
+| **Firefox Cloud Sync** | Not available. Mozilla grants Firefox Accounts OAuth and Sync access only on request and does not grant it to third-party browsers, so NEXA cannot join Mozilla's cloud. |
+| **NEXA Sync Mesh** | Zero-cloud 100% E2EE local Wi-Fi sync between NEXA and desktop Firefox (requires the desktop NEXA Sync Extension) |
 | **CRDT Conflict Resolution** | Base-62 fractional indexing ensures tree invariant preservation and zero collisions |
 | **Privacy Isolation** | Incognito tabs and private sessions are strictly excluded from all sync engines |
 
@@ -209,10 +196,10 @@ graph TD
 ### Repository Structure
 
 ```
-omni-browser/
+nexa-browser/
 ├── app/src/main/
 │   ├── assets/web_extensions/        # Bundled WebExtensions (uBlock, Grabber, Copy, AI)
-│   ├── java/com/rebelroot/omni/
+│   ├── java/com/devilnihad/nexa/
 │   │   ├── browser/                  # Core browser screen + ViewModel
 │   │   │   └── extensions/           # Extension manager classes
 │   │   ├── media/player/             # ExoPlayer + MSE stream interceptor
@@ -254,8 +241,8 @@ omni-browser/
 
 ```bash
 # Clone
-git clone https://github.com/REBEL-ROOT/omni-browser.git
-cd omni-browser
+git clone https://github.com/DEVILNIHAD/NEXA-Browser.git
+cd nexa-browser
 
 # Compile check
 ./gradlew compileArmDebugKotlin compileAarch64DebugKotlin
@@ -272,7 +259,7 @@ cd omni-browser
 
 ### Pre-built Releases
 
-Download the latest signed APK from our [**Releases Page**](https://github.com/REBEL-ROOT/omni-browser/releases/latest).
+Download the latest signed APK from our [**Releases Page**](https://github.com/DEVILNIHAD/NEXA-Browser/releases/latest).
 
 ---
 
@@ -315,9 +302,9 @@ git push origin feature/your-feature
       </a>
     </td>
     <td align="center">
-      <a href="https://github.com/RebelRoot">
-        <img src="https://github.com/RebelRoot.png?size=100" width="80" height="80" style="border-radius:50%" alt="RebelRoot" />
-        <br /><sub><b>RebelRoot</b></sub>
+      <a href="https://github.com/DEVILNIHAD">
+        <img src="https://github.com/DEVILNIHAD.png?size=100" width="80" height="80" style="border-radius:50%" alt="DEVILNIHAD" />
+        <br /><sub><b>DEVILNIHAD</b></sub>
       </a>
     </td>
     <td align="center">
@@ -354,16 +341,16 @@ Special thanks to the following community members who have helped debug the proj
 
 | Rank | Contributor | Contribution Evidence |
 | :---: | :--- | :--- |
-| **1** | [<img src="https://github.com/HikaruIchijyo.png?size=50" width="40" height="40" style="border-radius:50%" alt="HikaruIchijyo" /><br /><sub><b>HikaruIchijyo</b></sub>](https://github.com/HikaruIchijyo) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3AHikaruIchijyo)** (#23, #24, #25, #27, #28, #31, #37, #38, #40, #52, #53) — Very extensive testing and UI/UX feedback. #31 alone had multiple concrete improvements with reference screenshots, many of which were marked completed. |
-| **2** | [<img src="https://github.com/Tr4p-kun.png?size=50" width="40" height="40" style="border-radius:50%" alt="Tr4p-kun" /><br /><sub><b>Tr4p-kun</b></sub>](https://github.com/Tr4p-kun) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3ATr4p-kun)** (#10, #11, #12, #13) — Multiple detailed bug reports, proper reproduction steps, device/version information, and screenshots/videos. |
-| **3** | [<img src="https://github.com/trinadhthatakula.png?size=50" width="40" height="40" style="border-radius:50%" alt="trinadhthatakula" /><br /><sub><b>trinadhthatakula</b></sub>](https://github.com/trinadhthatakula) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3Atrinadhthatakula)** (#34) — Exceptional technical investigation of the versionCode regression, including release-by-release analysis, affected users, reproduction, and a proposed fix. |
-| **4** | [<img src="https://github.com/abhishekjena601-source.png?size=50" width="40" height="40" style="border-radius:50%" alt="abhishekjena601-source" /><br /><sub><b>abhishekjena601-source</b></sub>](https://github.com/abhishekjena601-source) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3Aabhishekjena601-source)** (#73, #77) — Repeated testing/feedback across media player, dark mode, pull-to-refresh, toolbar/UI, and other areas. |
-| **5** | [<img src="https://github.com/MalikSabahatAli.png?size=50" width="40" height="40" style="border-radius:50%" alt="MalikSabahatAli" /><br /><sub><b>MalikSabahatAli</b></sub>](https://github.com/MalikSabahatAli) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3AMalikSabahatAli)** (#61) — Excellent cross-site investigation of the .pk/.bin navigation bug, testing multiple domains and comparing behavior against Chrome. |
-| **6** | [<img src="https://github.com/jd0spec.png?size=50" width="40" height="40" style="border-radius:50%" alt="jd0spec" /><br /><sub><b>jd0spec</b></sub>](https://github.com/jd0spec) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3Ajd0spec)** (#51) — Detailed analysis of Omni's video-player architecture and playback continuity, with comparison against Quetta and a concrete technical direction. |
-| **7** | [<img src="https://github.com/DarkHorse313.png?size=50" width="40" height="40" style="border-radius:50%" alt="DarkHorse313" /><br /><sub><b>DarkHorse313</b></sub>](https://github.com/DarkHorse313) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3ADarkHorse313)** — Provided multiple valuable bug reports and detailed testing feedback on closed issues. |
-| **8** | [<img src="https://github.com/Sunnu126.png?size=50" width="40" height="40" style="border-radius:50%" alt="Sunnu126" /><br /><sub><b>Sunnu126</b></sub>](https://github.com/Sunnu126) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3ASunnu126)** (#49) — Detailed extension toggle bug report on Samsung S20 FE 5G (Android 13). |
-| **9** | [<img src="https://github.com/Phinixprono123.png?size=50" width="40" height="40" style="border-radius:50%" alt="Phinixprono123" /><br /><sub><b>Phinixprono123</b></sub>](https://github.com/Phinixprono123) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3APhinixprono123)** (#54) — Crucial compatibility bug report regarding settings crash on Vivo Y85 (Android 8.1 Oreo). |
-| **10** | [<img src="https://github.com/Atrium0495.png?size=50" width="40" height="40" style="border-radius:50%" alt="Atrium0495" /><br /><sub><b>Atrium0495</b></sub>](https://github.com/Atrium0495) | **[Closed Issues](https://github.com/REBEL-ROOT/omni-browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3AAtrium0495)** (#71) — Real tablet testing with screenshots identifying layout and accessibility problems. |
+| **1** | [<img src="https://github.com/HikaruIchijyo.png?size=50" width="40" height="40" style="border-radius:50%" alt="HikaruIchijyo" /><br /><sub><b>HikaruIchijyo</b></sub>](https://github.com/HikaruIchijyo) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3AHikaruIchijyo)** (#23, #24, #25, #27, #28, #31, #37, #38, #40, #52, #53) — Very extensive testing and UI/UX feedback. #31 alone had multiple concrete improvements with reference screenshots, many of which were marked completed. |
+| **2** | [<img src="https://github.com/Tr4p-kun.png?size=50" width="40" height="40" style="border-radius:50%" alt="Tr4p-kun" /><br /><sub><b>Tr4p-kun</b></sub>](https://github.com/Tr4p-kun) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3ATr4p-kun)** (#10, #11, #12, #13) — Multiple detailed bug reports, proper reproduction steps, device/version information, and screenshots/videos. |
+| **3** | [<img src="https://github.com/trinadhthatakula.png?size=50" width="40" height="40" style="border-radius:50%" alt="trinadhthatakula" /><br /><sub><b>trinadhthatakula</b></sub>](https://github.com/trinadhthatakula) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3Atrinadhthatakula)** (#34) — Exceptional technical investigation of the versionCode regression, including release-by-release analysis, affected users, reproduction, and a proposed fix. |
+| **4** | [<img src="https://github.com/abhishekjena601-source.png?size=50" width="40" height="40" style="border-radius:50%" alt="abhishekjena601-source" /><br /><sub><b>abhishekjena601-source</b></sub>](https://github.com/abhishekjena601-source) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3Aabhishekjena601-source)** (#73, #77) — Repeated testing/feedback across media player, dark mode, pull-to-refresh, toolbar/UI, and other areas. |
+| **5** | [<img src="https://github.com/MalikSabahatAli.png?size=50" width="40" height="40" style="border-radius:50%" alt="MalikSabahatAli" /><br /><sub><b>MalikSabahatAli</b></sub>](https://github.com/MalikSabahatAli) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3AMalikSabahatAli)** (#61) — Excellent cross-site investigation of the .pk/.bin navigation bug, testing multiple domains and comparing behavior against Chrome. |
+| **6** | [<img src="https://github.com/jd0spec.png?size=50" width="40" height="40" style="border-radius:50%" alt="jd0spec" /><br /><sub><b>jd0spec</b></sub>](https://github.com/jd0spec) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3Ajd0spec)** (#51) — Detailed analysis of NEXA's video-player architecture and playback continuity, with comparison against Quetta and a concrete technical direction. |
+| **7** | [<img src="https://github.com/DarkHorse313.png?size=50" width="40" height="40" style="border-radius:50%" alt="DarkHorse313" /><br /><sub><b>DarkHorse313</b></sub>](https://github.com/DarkHorse313) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3ADarkHorse313)** — Provided multiple valuable bug reports and detailed testing feedback on closed issues. |
+| **8** | [<img src="https://github.com/Sunnu126.png?size=50" width="40" height="40" style="border-radius:50%" alt="Sunnu126" /><br /><sub><b>Sunnu126</b></sub>](https://github.com/Sunnu126) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3ASunnu126)** (#49) — Detailed extension toggle bug report on Samsung S20 FE 5G (Android 13). |
+| **9** | [<img src="https://github.com/Phinixprono123.png?size=50" width="40" height="40" style="border-radius:50%" alt="Phinixprono123" /><br /><sub><b>Phinixprono123</b></sub>](https://github.com/Phinixprono123) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3APhinixprono123)** (#54) — Crucial compatibility bug report regarding settings crash on Vivo Y85 (Android 8.1 Oreo). |
+| **10** | [<img src="https://github.com/Atrium0495.png?size=50" width="40" height="40" style="border-radius:50%" alt="Atrium0495" /><br /><sub><b>Atrium0495</b></sub>](https://github.com/Atrium0495) | **[Closed Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues?q=is%3Aissue%20state%3Aclosed%20author%3AAtrium0495)** (#71) — Real tablet testing with screenshots identifying layout and accessibility problems. |
 
 ### 📺 Community Showcases & Reviews
 
@@ -380,7 +367,7 @@ Special thanks to content creators who have featured, demonstrated, or reviewed 
 This project is licensed under the **GNU General Public License v3 (GPLv3)**.
 
 ```
-NEXA Browser — Copyright (C) 2026 RebelRoot Ltd
+NEXA Browser — DEVILNIHAD distribution
 This is free software: you can redistribute it and/or modify it
 under the terms of the GPLv3. See LICENSE for details.
 ```
@@ -394,12 +381,12 @@ under the terms of the GPLv3. See LICENSE for details.
 
 ## 🔒 Security
 
-To report a vulnerability, use GitHub's private [Security Advisory](https://github.com/REBEL-ROOT/omni-browser/security/advisories/new) system — **do not open a public issue**. See [docs/SECURITY.md](docs/SECURITY.md).
+To report a vulnerability, use GitHub's private [Security Advisory](https://github.com/DEVILNIHAD/NEXA-Browser/security/advisories/new) system — **do not open a public issue**. See [docs/SECURITY.md](docs/SECURITY.md).
 
 ---
 
 <div align="center">
-  <sub>Made with 💻 and ☕ by <strong>RebelRoot</strong> &nbsp;|&nbsp; Powered by <a href="https://mozilla.github.io/geckoview/">Mozilla GeckoView</a></sub>
+  <sub>Made with 💻 and ☕ by <strong>DEVILNIHAD</strong> &nbsp;|&nbsp; Powered by <a href="https://mozilla.github.io/geckoview/">Mozilla GeckoView</a></sub>
   <br />
-  <sub><a href="https://www.linkedin.com/company/rebelroot">🔗 LinkedIn</a> &nbsp;|&nbsp; <a href="https://ko-fi.com/rebelroot">☕ Support us on Ko-fi</a></sub>
+  <sub><a href="https://www.linkedin.com/company/devilnihad">🔗 LinkedIn</a> &nbsp;|&nbsp; <a href="https://ko-fi.com/devilnihad">☕ Support us on Ko-fi</a></sub>
 </div>

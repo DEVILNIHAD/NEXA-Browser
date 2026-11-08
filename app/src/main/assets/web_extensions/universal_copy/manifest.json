@@ -1,11 +1,11 @@
 {
     "manifest_version": 2,
-    "name": "Omni Universal Copy",
+    "name": "NEXA Universal Copy",
     "version": "1.0.0",
     "description": "Bypasses CSS and JS copy event blocks, forcing universal selection of any page content.",
     "browser_specific_settings": {
         "gecko": {
-            "id": "omni-universal-copy@omnibrowser.app"
+            "id": "nexa-universal-copy@nexabrowser.app"
         }
     },
     "content_scripts": [

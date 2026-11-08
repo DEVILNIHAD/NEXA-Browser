@@ -1,5 +1,5 @@
 /*
- * Omni Proxy Router — background script.
+ * NEXA Proxy Router — background script.
  *
  * Routes the browser's HTTP(S) traffic through the active Tor / SOCKS proxy by
  * implementing the WebExtension `proxy` API (browser.proxy.onRequest). The app
@@ -16,8 +16,8 @@
  * Pull model: the app has no app->extension push channel, so we poll the app for
  * the current endpoint (mirrors how media_grabber polls GET_NATIVE_PLAYER_STATE).
  *
- * IMPORTANT: this extension uses its OWN native-messaging name "omniProxy"
- * (NOT "omniApp", which media_grabber owns). Sharing the name across two
+ * IMPORTANT: this extension uses its OWN native-messaging name "nexaProxy"
+ * (NOT "nexaApp", which media_grabber owns). Sharing the name across two
  * extensions' setMessageDelegate breaks routing in GeckoView.
  */
 
@@ -26,7 +26,7 @@
 const api = (typeof browser !== "undefined") ? browser : chrome;
 
 const TAG = "[ProxyRouter]";
-const NATIVE_APP = "omniProxy";
+const NATIVE_APP = "nexaProxy";
 
 // Cached SOCKS endpoint from the app, or null when traffic should go direct.
 let endpoint = null;

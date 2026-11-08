@@ -1,4 +1,4 @@
-// content.js — Omni Media Grabber Content Script
+// content.js — NEXA Media Grabber Content Script
 const api = typeof browser !== "undefined" ? browser : chrome;
 var chrome = api;
 
@@ -14,7 +14,7 @@ try {
         .then((response) => {
             if (response && response.hasOwnProperty('enabled')) {
                 window.postMessage({
-                    type: 'OMNI_SET_NATIVE_PLAYER',
+                    type: 'NEXA_SET_NATIVE_PLAYER',
                     enabled: response.enabled,
                     youtubeEnabled: response.youtubeEnabled
                 }, '*');
@@ -58,9 +58,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             url: message.url,
             mimeType: message.mimeType
         }, '*');
-    } else if (message.type === 'OMNI_SET_NATIVE_PLAYER') {
+    } else if (message.type === 'NEXA_SET_NATIVE_PLAYER') {
         window.postMessage({
-            type: 'OMNI_SET_NATIVE_PLAYER',
+            type: 'NEXA_SET_NATIVE_PLAYER',
             enabled: message.enabled,
             youtubeEnabled: message.youtubeEnabled
         }, '*');
@@ -150,7 +150,7 @@ window.addEventListener('message', (event) => {
             type: 'VIDEO_STATE_CHANGE',
             isPlaying: data.isPlaying
         });
-    } else if (data.type === 'OMNI_CONSOLE_LOG') {
+    } else if (data.type === 'NEXA_CONSOLE_LOG') {
         chrome.runtime.sendMessage({
             type: 'CONSOLE_LOG',
             level: data.level,
@@ -163,11 +163,11 @@ window.addEventListener('message', (event) => {
             pageUrl: data.pageUrl,
             mimeType: data.mimeType
         });
-    } else if (data.type === 'OMNI_FOCUS_LOGIN_INPUT') {
+    } else if (data.type === 'NEXA_FOCUS_LOGIN_INPUT') {
         chrome.runtime.sendMessage({
             type: 'FOCUS_LOGIN_INPUT'
         });
-    } else if (data.type === 'OMNI_INNER_SCROLL_STATE') {
+    } else if (data.type === 'NEXA_INNER_SCROLL_STATE') {
         chrome.runtime.sendMessage({
             type: 'INNER_SCROLL_STATE',
             isScrolled: data.isScrolled

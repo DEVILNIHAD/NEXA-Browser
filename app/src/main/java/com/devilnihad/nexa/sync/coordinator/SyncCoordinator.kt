@@ -1,0 +1,274 @@
+package com.devilnihad.nexa.sync.coordinator
+
+import com.devilnihad.nexa.bookmarks.model.BookmarkCollection
+import com.devilnihad.nexa.sync.adapter.BookmarkAdapter
+import com.devilnihad.nexa.sync.conflict.ConflictEngine
+import com.devilnihad.nexa.sync.crypto.*
+import com.devilnihad.nexa.sync.model.*
+import com.devilnihad.nexa.sync.storage.SyncStorage
+import com.devilnihad.nexa.sync.transport.lan.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import android.util.Log
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
+import org.json.JSONArray
+import java.io.File
+import java.net.Socket
+
+private const val TAG = "SyncCoordinator"
+
+enum class SyncStatus {
+    IDLE,
+    SYNCING,
+    CONNECTED,
+    ERROR
+}
+
+enum class SyncBackend {
+    NEXA_LAN,
+    FIREFOX,
+    BOTH
+}
+
+data class SyncUiState(
+    val deviceId: String = "",
+    val deviceName: String = "",
+    val fingerprint: String = "",
+    val trustedDevices: List<TrustedDevice> = emptyList(),
+    val syncStatus: SyncStatus = SyncStatus.IDLE,
+    val autoSyncEnabled: Boolean = true,
+    val lastSyncTimestamp: Long = 0L,
+    val pendingOutboxCount: Int = 0,
+    val statusMessage: String = "Ready",
+    val syncBackend: SyncBackend = SyncBackend.NEXA_LAN,
+    val fxSyncEnabled: Boolean = false,
+    val fxAccountEmail: String? = null
+)
+
+class SyncCoordinator(
+    private val baseDir: File,
+    val collection: BookmarkCollection,
+    val lanPort: Int = 0,
+    private val broadcastPort: Int = 0,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+) {
+    val keyManager = DeviceKeyManager(baseDir)
+    val trustManager = TrustManager(baseDir)
+    val pairingEngine = PairingEngine(keyManager, trustManager)
+    val clock = HlcClock(keyManager.deviceId)
+    val adapter = BookmarkAdapter(clock)
+    val storage = SyncStorage(baseDir, clock)
+    val conflictEngine = ConflictEngine(adapter, storage)
+
+    val lanServer = LanTransportServer(lanPort, keyManager, trustManager)
+    val webSocketServer = com.devilnihad.nexa.sync.transport.lan.LanWebSocketServer(
+        port = if (lanPort > 0) lanPort else 8765,
+        keyManager = keyManager,
+        trustManager = trustManager,
+        storage = storage,
+        conflictEngine = conflictEngine,
+        collection = collection,
+        syncBridge = com.devilnihad.nexa.sync.core.SyncBridge.getInstance(),
+        onAppliedOperations = { ops -> persistSyncedBookmarks(ops) }
+    )
+    val lanDiscovery = LanDiscoveryService(
+        deviceId = keyManager.deviceId,
+        deviceName = keyManager.deviceName,
+        port = lanPort,
+        publicKeyBase64 = keyManager.publicKeyBase64,
+        broadcastPort = broadcastPort
+    )
+
+    private val _uiState = MutableStateFlow(
+        SyncUiState(
+            deviceId = keyManager.deviceId,
+            deviceName = keyManager.deviceName,
+            fingerprint = keyManager.fingerprint,
+            trustedDevices = trustManager.allTrustedDevices(),
+            pendingOutboxCount = storage.outboxCount()
+        )
+    )
+    val uiState: StateFlow<SyncUiState> = _uiState.asStateFlow()
+
+    init {
+        startLanServices()
+    }
+
+    private fun startLanServices() {
+        webSocketServer.start()
+        lanServer.start { session ->
+            handleIncomingSession(session)
+        }
+        lanDiscovery.port = lanServer.port
+        lanDiscovery.start { peer ->
+            if (trustManager.isDeviceTrusted(peer.deviceId) && _uiState.value.autoSyncEnabled) {
+                syncWithPeer(peer.hostAddress, peer.port)
+            }
+        }
+    }
+
+    fun onLocalBookmarkMutation(op: SyncOperation) {
+        storage.recordLocalMutation(op)
+        updateState()
+        if (_uiState.value.autoSyncEnabled) {
+            lanDiscovery.broadcastBeacon()
+        }
+    }
+
+    fun syncNow() {
+        scope.launch {
+            _uiState.value = _uiState.value.copy(syncStatus = SyncStatus.SYNCING, statusMessage = "Broadcasting sync beacon...")
+            lanDiscovery.broadcastBeacon()
+            val peers = lanDiscovery.getDiscoveredPeers().filter { trustManager.isDeviceTrusted(it.deviceId) }
+            if (peers.isEmpty()) {
+                _uiState.value = _uiState.value.copy(syncStatus = SyncStatus.IDLE, statusMessage = "No trusted LAN peers active")
+            } else {
+                peers.forEach { syncWithPeer(it.hostAddress, it.port) }
+            }
+        }
+    }
+
+    fun syncWithPeer(host: String, port: Int) {
+        scope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(syncStatus = SyncStatus.SYNCING, statusMessage = "Syncing with " + host + ":" + port)
+                val socket = Socket(host, port)
+                val session = LanTransportSession(socket, keyManager, trustManager, isServer = false)
+                if (session.performHandshake()) {
+                    val pending = storage.pendingOutboxOperations()
+                    session.sendSyncOperations(pending)
+
+                    val receivedEnv = session.receiveEncryptedEnvelope()
+                    if (receivedEnv != null) {
+                        val decrypted = session.decryptEnvelope(receivedEnv)
+                        if (decrypted != null) {
+                            persistSyncedBookmarks(parseTransportOperations(decrypted))
+                            _uiState.value = _uiState.value.copy(
+                                lastSyncTimestamp = System.currentTimeMillis(),
+                                syncStatus = SyncStatus.CONNECTED,
+                                statusMessage = "Sync completed successfully"
+                            )
+                        }
+                    }
+                }
+                session.close()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(syncStatus = SyncStatus.ERROR, statusMessage = "Sync failed: " + e.message)
+            }
+        }
+    }
+
+    private fun handleIncomingSession(session: LanTransportSession) {
+        scope.launch {
+            try {
+                val envelope = session.receiveEncryptedEnvelope()
+                if (envelope != null) {
+                    val bytes = session.decryptEnvelope(envelope)
+                    if (bytes != null) {
+                        persistSyncedBookmarks(parseTransportOperations(bytes))
+                        _uiState.value = _uiState.value.copy(
+                            lastSyncTimestamp = System.currentTimeMillis(),
+                            syncStatus = SyncStatus.CONNECTED,
+                            statusMessage = "Synced with " + session.remoteDeviceId
+                        )
+                    }
+                }
+                val pending = storage.pendingOutboxOperations()
+                session.sendSyncOperations(pending)
+            } catch (_: Exception) {}
+        }
+    }
+
+    /**
+     * Persists bookmark operations received from a peer into the canonical store
+     * and asks the UI to republish. The operations are applied onto a freshly
+     * loaded store (under the shared store lock) so a concurrent in-app edit is
+     * not clobbered by this coordinator's long-lived in-memory copy.
+     */
+    private fun persistSyncedBookmarks(ops: List<SyncOperation>) {
+        if (ops.isEmpty()) return
+        scope.launch {
+            com.devilnihad.nexa.bookmarks.storage.BookmarkStoreLock.mutex.withLock {
+                try {
+                    val fresh = com.devilnihad.nexa.bookmarks.storage.loadBookmarksFromDir(baseDir)
+                    ops.forEach { adapter.applyRemoteOperation(fresh, it) }
+                    com.devilnihad.nexa.bookmarks.storage.saveBookmarksToDir(baseDir, fresh)
+                    com.devilnihad.nexa.sync.core.SyncBridge.getInstance().notifyBookmarkStoreChanged()
+                    updateState()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to persist synced bookmarks: ${e.message}", e)
+                }
+            }
+        }
+    }
+
+    /** Parses the raw-TCP transport payload (a JSON array of operations). */
+    private fun parseTransportOperations(bytes: ByteArray): List<SyncOperation> {
+        return try {
+            val arr = JSONArray(String(bytes, Charsets.UTF_8))
+            (0 until arr.length()).mapNotNull { i ->
+                val o = arr.getJSONObject(i)
+                val bookmark = o.optJSONObject("bookmark")
+                SyncOperation(
+                    opId = o.getString("opId"),
+                    opType = SyncOpType.valueOf(o.getString("opType")),
+                    entityType = SyncEntityType.valueOf(o.getString("entityType")),
+                    entityId = o.getString("entityId"),
+                    hlc = Hlc.parse(o.getString("hlc")),
+                    bookmarkPayload = bookmark?.let {
+                        BookmarkPayload(
+                            parentId = it.optString("parentId", "root"),
+                            position = it.optString("position", "a0"),
+                            title = it.optString("title", ""),
+                            url = it.optString("url", ""),
+                            createdAt = System.currentTimeMillis(),
+                            modifiedAt = System.currentTimeMillis(),
+                            isDeleted = false
+                        )
+                    },
+                    isLocalOrigin = false
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse transport operations: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    fun createPairingInvitation(): PairingInvitation = pairingEngine.createInvitation(
+        lanHost = com.devilnihad.nexa.sync.transport.lan.LanWebSocketServer.getLocalIpAddress(),
+        lanPort = webSocketServer.port
+    )
+
+    fun processPairingInvitation(invitationJson: String): PairingResult {
+        val result = pairingEngine.processIncomingInvitation(invitationJson)
+        updateState()
+        return result
+    }
+
+    fun revokeDevice(deviceId: String) {
+        trustManager.revokeDevice(deviceId)
+        updateState()
+    }
+
+    fun setAutoSyncEnabled(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(autoSyncEnabled = enabled)
+    }
+
+    private fun updateState() {
+        _uiState.value = _uiState.value.copy(
+            trustedDevices = trustManager.allTrustedDevices(),
+            pendingOutboxCount = storage.outboxCount()
+        )
+    }
+
+    fun shutdown() {
+        lanDiscovery.stop()
+        lanServer.stop()
+        webSocketServer.stop()
+    }
+}

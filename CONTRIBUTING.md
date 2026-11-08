@@ -23,8 +23,8 @@ By participating in this project you agree to maintain a welcoming, respectful, 
 ### Getting Started
 
 ```bash
-git clone https://github.com/REBEL-ROOT/omni-browser.git
-cd omni-browser
+git clone https://github.com/DEVILNIHAD/NEXA-Browser.git
+cd nexa-browser
 
 # Verify it compiles cleanly (targets both CPU flavors)
 ./gradlew compileArmDebugKotlin compileAarch64DebugKotlin
@@ -95,7 +95,7 @@ cd omni-browser
 
 ## 🐛 Reporting Bugs
 
-Please use the [GitHub Issues](https://github.com/REBEL-ROOT/omni-browser/issues) page to report bugs.
+Please use the [GitHub Issues](https://github.com/DEVILNIHAD/NEXA-Browser/issues) page to report bugs.
 
 Include:
 - Android version and device model
@@ -108,7 +108,7 @@ Include:
 
 ## 💡 Suggesting Features
 
-Open a [GitHub Issue](https://github.com/REBEL-ROOT/omni-browser/issues) with the label **`enhancement`** and describe:
+Open a [GitHub Issue](https://github.com/DEVILNIHAD/NEXA-Browser/issues) with the label **`enhancement`** and describe:
 - What the feature does
 - Why it benefits NEXA Browser users
 - Any design or implementation ideas you have
@@ -119,7 +119,7 @@ Open a [GitHub Issue](https://github.com/REBEL-ROOT/omni-browser/issues) with th
 
 **Do not open a public issue for security vulnerabilities.**
 
-Use GitHub's private [Security Advisory](https://github.com/REBEL-ROOT/omni-browser/security/advisories/new) system to report responsibly. See [docs/SECURITY.md](docs/SECURITY.md) for our full disclosure policy.
+Use GitHub's private [Security Advisory](https://github.com/DEVILNIHAD/NEXA-Browser/security/advisories/new) system to report responsibly. See [docs/SECURITY.md](docs/SECURITY.md) for our full disclosure policy.
 
 ---
 

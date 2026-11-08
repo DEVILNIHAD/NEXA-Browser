@@ -15,7 +15,7 @@ The bookmark system is a full import/export pipeline that lets NEXA Browser user
 2. **Preview** the import before committing — see folder structure, counts, warnings, and choose how to handle duplicates
 3. **Export** bookmarks to standard Netscape Bookmark HTML for backup or migration to another browser
 
-The system is built on a **canonical bookmark model** (UUID-based, parent-ID + position) that is designed to be the foundation for future Omni Sync.
+The system is built on a **canonical bookmark model** (UUID-based, parent-ID + position) that is designed to be the foundation for future NEXA Sync.
 
 ---
 
@@ -45,7 +45,7 @@ The system is built on a **canonical bookmark model** (UUID-based, parent-ID + p
 │       ▼                    ▼                       ▼                        │
 │  ┌─────────────────────────────────────────────────────────────┐            │
 │  │              BookmarkCollection (in-memory)                  │            │
-│  │  OmniBookmark + OmniBookmarkFolder + tree ops + validation   │            │
+│  │  NEXABookmark + NEXABookmarkFolder + tree ops + validation   │            │
 │  └─────────────────────────────────────────────────────────────┘            │
 │       │                                                                     │
 │       ▼                                                                     │
@@ -64,7 +64,7 @@ The system is built on a **canonical bookmark model** (UUID-based, parent-ID + p
 
 | File | Description |
 |------|-------------|
-| `model/OmniBookmark.kt` | `OmniBookmark` + `OmniBookmarkFolder` data classes |
+| `model/NEXABookmark.kt` | `NEXABookmark` + `NEXABookmarkFolder` data classes |
 | `model/BookmarkNode.kt` | Sealed tree nodes (`Folder` with `children`, `Item`) |
 | `model/BookmarkCollection.kt` | In-memory container: add/move/delete/rename/buildTree/validate |
 
@@ -106,7 +106,7 @@ The system is built on a **canonical bookmark model** (UUID-based, parent-ID + p
 ## Canonical Model
 
 ```kotlin
-data class OmniBookmark(
+data class NEXABookmark(
     val id: String,        // UUID — sync identity
     val parentId: String,  // ROOT_FOLDER_ID or folder UUID
     val position: Long,    // 0-based dense index within parent
@@ -116,7 +116,7 @@ data class OmniBookmark(
     val modifiedAt: Long
 )
 
-data class OmniBookmarkFolder(
+data class NEXABookmarkFolder(
     val id: String,
     val parentId: String,
     val position: Long,
@@ -224,7 +224,7 @@ Verified for: Chrome, Firefox, Safari, Edge, and synthetic edge cases.
 
 ---
 
-## Future Work (Omni Sync)
+## Future Work (NEXA Sync)
 
 The canonical model is intentionally sync-ready:
 - **Stable UUIDs** are the sync identity
@@ -232,4 +232,4 @@ The canonical model is intentionally sync-ready:
 - **Timestamps** support conflict resolution
 - **Validation** catches sync-induced corruption before it reaches storage
 
-The next phase will add a sync adapter layer that converts `OmniBookmark`/`OmniBookmarkFolder` to/from the Omni Sync wire format.
+The next phase will add a sync adapter layer that converts `NEXABookmark`/`NEXABookmarkFolder` to/from the NEXA Sync wire format.

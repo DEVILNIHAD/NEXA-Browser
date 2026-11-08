@@ -8,14 +8,14 @@ plugins {
 
 // Single version code for all flavors (Play Store upload).
 val baseVersionCode = 2056
-val baseVersionName = "2.0.0"
+val baseVersionName = "1.3.5.1"
 
 android {
-    namespace = "com.devilnihad.nexabrowser"
+    namespace = "com.devilnihad.nexa"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.devilnihad.nexabrowser"
+        applicationId = "com.devilnihad.nexa"
         minSdk = 26
         targetSdk = 36
         versionCode = baseVersionCode

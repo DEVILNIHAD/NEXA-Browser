@@ -14,7 +14,7 @@
     <string name="private_browsing_title">Navegación privada</string>
     <string name="private_browsing_desc">Bloquear rastreadores y cookies</string>
     <string name="native_player_title">Reproductor de video nativo</string>
-    <string name="native_player_desc">Abrir videos en Omni Player con descarga</string>
+    <string name="native_player_desc">Abrir videos en NEXA Player con descarga</string>
     <string name="ai_blocker_title">Bloqueador de IA</string>
     <string name="ai_blocker_desc">Bloquear resúmenes generativos de búsqueda por completo</string>
     <string name="default_browser_title">Navegador predeterminado</string>
@@ -111,8 +111,8 @@
     <string name="update_failed_title">Error al buscar actualizaciones</string>
     <string name="update_failed_desc">No se puede conectar al servidor de actualización (%1$s). ¿Desea consultar Play Store manualmente?</string>
     <string name="update_dialog_open_store">Abrir Play Store</string>
-    <string name="support_github">Soporte de GitHub (RebelRoot)</string>
-    <string name="website_omnibrowser">Sitio web de OmniBrowser</string>
+    <string name="support_github">Soporte de GitHub (DEVILNIHAD)</string>
+    <string name="website_nexabrowser">Sitio web de NEXABrowser</string>
     <string name="update_no_update">NEXA Browser está actualizado (v%1$s)</string>
     <string name="locker_cat_images">Imágenes</string>
     <string name="locker_cat_videos">Videos</string>
@@ -286,7 +286,7 @@
     <string name="home_recently_visited">Visitados recientemente</string>
     <string name="home_see_all">Ver todo</string>
     <string name="home_more">Más</string>
-    <string name="home_shield_active">Omni Shield activo</string>
+    <string name="home_shield_active">NEXA Shield activo</string>
     <string name="home_view_report">Ver informe de privacidad</string>
     <string name="home_view_report_short">Ver informe</string>
     <string name="privacy_report_title">Informe de privacidad</string>
@@ -309,7 +309,7 @@
     <string name="privacy_cat_retargeting">Publicidad y remarketing</string>
     <string name="privacy_cat_market_research">Investigación de mercado y análisis</string>
     <string name="privacy_report_intelligent_tracking">Prevención inteligente de rastreo</string>
-    <string name="privacy_report_banner_desc">La protección inteligente de Omni evita que los rastreadores perfilen su actividad web y recopilen datos entre sitios.</string>
+    <string name="privacy_report_banner_desc">La protección inteligente de NEXA evita que los rastreadores perfilen su actividad web y recopilen datos entre sitios.</string>
     <string name="privacy_report_trackers_prevented">Rastreadores bloqueados</string>
     <string name="privacy_report_est_data_saved">Datos ahorrados est.</string>
     <string name="privacy_report_faster_page_load">Carga de página más rápida</string>
@@ -390,7 +390,7 @@
     <string name="send_feedback_title">Enviar comentarios directos</string>
     <string name="send_feedback_desc">Informar sobre errores, sugerir funciones y compartir ideas</string>
     <string name="support_github_desc">Ver código fuente e informar de problemas</string>
-    <string name="website_omnibrowser_desc">Visitar el sitio web oficial de NEXA Browser</string>
+    <string name="website_nexabrowser_desc">Visitar el sitio web oficial de NEXA Browser</string>
     <string name="privacy_policy_desc">Leer nuestra política de privacidad</string>
     <string name="appearance_address_bar">Barra de direcciones</string>
     <string name="appearance_top">Superior</string>
@@ -569,7 +569,7 @@
     <string name="onboarding_nav_bottom">3. Inferior</string>
     <string name="onboarding_active_layout">Activo: Diseño %1$s</string>
     <string name="onboarding_layout_toast">Diseño configurado en %1$s</string>
-    <string name="onboarding_title_default_browser">Establece Omni como tu\nNavegador predeterminado</string>
+    <string name="onboarding_title_default_browser">Establece NEXA como tu\nNavegador predeterminado</string>
     <string name="onboarding_tagline_default_browser">Rápido · Privado · Seguro cada día</string>
     <string name="onboarding_feature_auto_protection_title">Protección automática</string>
     <string name="onboarding_feature_auto_protection_desc">Bloquea rastreadores, ventanas emergentes y anuncios dañinos</string>
@@ -577,8 +577,8 @@
     <string name="onboarding_feature_lightning_desc">Renderizado instantáneo sin ralentizaciones de telemetría</string>
     <string name="onboarding_feature_encrypted_title">Cifrado y seguro</string>
     <string name="onboarding_feature_encrypted_desc">Protección biométrica y cifrado HTTPS automático</string>
-    <string name="onboarding_default_card_title">Haz de Omni tu navegador predeterminado</string>
-    <string name="onboarding_default_card_desc">Abre la configuración para seleccionar Omni como predeterminado</string>
+    <string name="onboarding_default_card_title">Haz de NEXA tu navegador predeterminado</string>
+    <string name="onboarding_default_card_desc">Abre la configuración para seleccionar NEXA como predeterminado</string>
     <string name="onboarding_set_default_button">Establecer como navegador predeterminado</string>
     <string name="menu_incognito">Incógnito</string>
     <string name="menu_group">Grupo</string>
@@ -721,8 +721,8 @@
     <string name="ext_builtin_universal_copy_desc">Omite las restricciones del sitio web para forzar la selección y copia de texto.</string>
     <string name="ext_builtin_media_sniffer">Rastreador de medios</string>
     <string name="ext_builtin_media_sniffer_desc">Detecta y captura segmentos HLS/DASH dinámicos y transmisiones sin conexión.</string>
-    <string name="ext_builtin_omni_translate">Omni Translate</string>
-    <string name="ext_builtin_omni_translate_desc">Traducción de páginas web en el dispositivo</string>
+    <string name="ext_builtin_nexa_translate">NEXA Translate</string>
+    <string name="ext_builtin_nexa_translate_desc">Traducción de páginas web en el dispositivo</string>
     <string name="offline_ai_settings_title">IA sin conexión</string>
     <string name="offline_ai_settings_desc">Traducción y subtítulos en el dispositivo — descarga modelos, sin nube</string>
     <string name="ext_builtin_ai_blocker">Bloqueador de IA</string>
@@ -741,7 +741,7 @@
     <string name="wallpaper_dim_label">Atenuación del fondo</string>
     <string name="wallpaper_blur_label">Desenfoque del fondo</string>
     <string name="shortcut_shape_helper">Elige la forma de los iconos de acceso directo</string>
-    <string name="show_logo_desc">Mostrar el logo de Omni en la parte superior</string>
+    <string name="show_logo_desc">Mostrar el logo de NEXA en la parte superior</string>
     <string name="show_shortcuts_desc">Enlaces de acceso rápido a sitios y accesos directos integrados</string>
     <string name="privacy_stats_widget">Widget de estadísticas de privacidad</string>
     <string name="privacy_stats_widget_desc">Mostrar tarjeta de rastreadores bloqueados y datos ahorrados</string>
@@ -887,7 +887,7 @@
     <string name="qr_gallery">Imagen de galería</string>
     <string name="qr_scan_another">Escanear otro código</string>
     <string name="qr_scan_code">Escanear código</string>
-    <string name="qr_secured_by">Protegido por Omni QR Scanner</string>
+    <string name="qr_secured_by">Protegido por NEXA QR Scanner</string>
     <string name="qr_detected">Código QR detectado</string>
     <string name="qr_found_codes">%1$d códigos encontrados (%2$d/%3$d)</string>
     <string name="qr_copied_clipboard">Copiado al portapapeles</string>
@@ -1073,10 +1073,10 @@
     <!-- Download Sheet -->
     <string name="download_sheet_mp3">MP3</string>
     <string name="download_toast_external">Opening external download manager...</string>
-    <string name="download_toast_no_handoff">This media needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_no_handoff">This media needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_started">Download started...</string>
     <string name="download_toast_locker">Downloading to Locker...</string>
-    <string name="download_toast_mp3_no_handoff">MP3 extraction needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_mp3_no_handoff">MP3 extraction needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_mp3_started">Downloading as MP3...</string>
     <string name="download_destination_local">Download Locally</string>
     <string name="download_destination_vault">Save to Private Vault 🔒</string>
@@ -1084,12 +1084,12 @@
     <!-- Manga Download Toasts -->
     <string name="manga_toast_starting">⏳ Starting download (%1$s to %2$s)...</string>
     <string name="manga_toast_pdf_vault">🔒 Saved Manga PDF (%1$d pages) to Private Vault</string>
-    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/NEXABrowser/%2$s</string>
     <string name="manga_toast_pdf_failed">Failed to compile PDF: %1$s</string>
     <string name="manga_mode_pdf">PDF document</string>
     <string name="manga_mode_images">%1$d images</string>
     <string name="manga_toast_images_vault">🔒 Saved %1$d images to Private Vault</string>
-    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/NEXABrowser/%2$s</string>
 
 
     <!-- Download Sheet -->
@@ -1293,8 +1293,8 @@
     <string name="browser_clear_console">Clear Console</string>
     <string name="browser_clear_search">Clear search</string>
     <string name="browser_favicon_cd">Favicon</string>
-    <string name="browser_omni_logo_cd">NEXA Browser Custom Logo</string>
-    <string name="browser_omni_logo_cd2">NEXA Browser Logo</string>
+    <string name="browser_nexa_logo_cd">NEXA Browser Custom Logo</string>
+    <string name="browser_nexa_logo_cd2">NEXA Browser Logo</string>
     <string name="browser_reload_cd">Reload</string>
     <string name="address_bar_history">History</string>
     <string name="address_bar_clear_browsing_data">Clear Browsing Data</string>
@@ -1655,7 +1655,7 @@
     <string name="download_settings_desc">Default downloader, preferences, and download rules</string>
     <string name="default_downloader_title">Default Downloader</string>
     <string name="default_downloader_desc">Choose default engine or app for file downloads</string>
-    <string name="downloader_internal">Omni Downloader (Built-in)</string>
+    <string name="downloader_internal">NEXA Downloader (Built-in)</string>
     <string name="downloader_internal_desc">Fast internal engine with video sniffer and vault support</string>
     <string name="downloader_system">Android System Downloader</string>
     <string name="downloader_system_desc">Native OS DownloadManager service</string>
@@ -1731,7 +1731,7 @@
     <string name="download_copy_url">Copy download link</string>
     <string name="autofill_provider_title">Autofill provider</string>
     <string name="autofill_provider_system">Android system (Bitwarden, etc.)</string>
-    <string name="autofill_provider_omni">Omni password vault</string>
+    <string name="autofill_provider_nexa">NEXA password vault</string>
     <string name="autofill_provider_both">Both</string>
     <string name="extension_download_policy_title">Extension downloads</string>
     <string name="extension_download_policy_ask">Ask every time</string>
@@ -1740,7 +1740,7 @@
     <string name="show_recents">Mostrar recientes</string>
     <string name="show_recents_desc">Mostrar sitios visitados recientemente en la pantalla de inicio</string>
 
-    <string name="sync_title">Omni Sync</string>
+    <string name="sync_title">NEXA Sync</string>
     <string name="sync_subtitle">Sincronización en la nube y P2P multidispositivo</string>
     <string name="sync_fxa_title">Sincronización con cuenta Firefox</string>
     <string name="sync_fxa_subtitle">Mozilla Cloud Sync</string>
@@ -1755,10 +1755,10 @@
     <string name="sync_fxa_desc">Inicie sesión con su cuenta de Firefox para sincronizar automáticamente marcadores, pestañas abiertas de PC/Mac, historial y contraseñas a través de Mozilla Cloud.</string>
     <string name="sync_fxa_complete_toast">¡Sincronización con Firefox Cloud completada!</string>
     <string name="sync_fxa_signed_out_toast">Sesión cerrada de la cuenta Firefox</string>
-    <string name="sync_mesh_title">Omni Sync Mesh (Sin conexión / LAN)</string>
+    <string name="sync_mesh_title">NEXA Sync Mesh (Sin conexión / LAN)</string>
     <string name="sync_mesh_subtitle">Sin nube · 100% E2EE P2P (Próximamente)</string>
     <string name="sync_mesh_upcoming_badge">Función próxima — Fase de prueba</string>
-    <string name="sync_mesh_upcoming_desc">Omni Sync Mesh está en fase de prueba. Requiere instalar la extensión Omni Sync (Testing) en su navegador de escritorio.</string>
+    <string name="sync_mesh_upcoming_desc">NEXA Sync Mesh está en fase de prueba. Requiere instalar la extensión NEXA Sync (Testing) en su navegador de escritorio.</string>
     <string name="sync_mesh_desc">Sincronice directamente marcadores, pestañas abiertas, historial y preferencias de igual a igual a través de Wi-Fi local sin servidores centrales.</string>
     <string name="sync_pair_device">Vincular dispositivo</string>
     <string name="sync_sync_p2p">Sincronizar P2P</string>
@@ -1770,7 +1770,7 @@
     <string name="sync_outbox_journal">Registro de salida</string>
     <string name="sync_pending_mutations">%1$d mutaciones pendientes</string>
     <string name="sync_safe_layer_title">Capa de sincronización segura y no destructiva</string>
-    <string name="sync_safe_layer_desc">Los marcadores y datos existentes nunca se sobrescriben. Omni Sync opera dentro de una capa aislada y cifrada.</string>
+    <string name="sync_safe_layer_desc">Los marcadores y datos existentes nunca se sobrescriben. NEXA Sync opera dentro de una capa aislada y cifrada.</string>
     <string name="sync_section_actions">Centro de importación y exportación</string>
     <string name="sync_btn_from_pc">Desde PC</string>
     <string name="sync_btn_to_pc">A PC</string>
@@ -1804,11 +1804,11 @@
     <string name="sync_guarantee_settings_title">Lista blanca de ajustes portátiles</string>
     <string name="sync_guarantee_settings_desc">Sincroniza motores de búsqueda, tema oscuro y filtros manteniendo aislados los parámetros de hardware.</string>
     <string name="sync_section_browsers">Navegadores de escritorio compatibles (Extensión de prueba)</string>
-    <string name="sync_browsers_desc">La sincronización P2P directa requiere instalar la extensión Omni Sync (Prueba) en su navegador:</string>
+    <string name="sync_browsers_desc">La sincronización P2P directa requiere instalar la extensión NEXA Sync (Prueba) en su navegador:</string>
     <string name="sync_section_paired_devices">Dispositivos vinculados (%1$d)</string>
     <string name="sync_no_paired_devices">"No hay dispositivos vinculados aún. Toque 'Vincular dispositivo' para generar o escanear un código QR."</string>
     <string name="sync_pair_dialog_title">Vincular dispositivo</string>
-    <string name="sync_pair_dialog_extension_req">Requiere la extensión Omni Sync (Prueba) instalada en su navegador de escritorio.</string>
+    <string name="sync_pair_dialog_extension_req">Requiere la extensión NEXA Sync (Prueba) instalada en su navegador de escritorio.</string>
     <string name="sync_scan_desktop_qr">Escanear código QR de escritorio</string>
     <string name="sync_share_invitation_code">O comparta este código de invitación en su PC:</string>
     <string name="sync_copy_phone_code">Copiar código de vinculación</string>
@@ -1879,5 +1879,5 @@
     <string name="home_section_privacy">Estadísticas de privacidad</string>
     <string name="tool_spoof_identity">Suplantar identidad</string>
     <string name="tool_torrent_magnet">Torrent y Magnet</string>
-    <string name="tool_omni_beam">Omni Beam</string>
+    <string name="tool_nexa_beam">NEXA Beam</string>
 </resources>

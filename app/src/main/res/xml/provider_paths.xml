@@ -3,7 +3,7 @@
     <!-- Share files temporarily decrypted inside the app's cache directory -->
     <cache-path name="decrypted_cache" path="." />
     <!-- Downloaded files saved via saveToPublicDownloads (external files dir) -->
-    <external-files-path name="omni_downloads" path="Downloads/OmniDownloads/" />
+    <external-files-path name="nexa_downloads" path="Downloads/NEXADownloads/" />
     <!-- Temp staging area used during download before moving to final destination -->
     <files-path name="temp_downloads" path="temp_downloads/" />
 </paths>

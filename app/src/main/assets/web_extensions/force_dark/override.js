@@ -71,8 +71,8 @@
                 var depth = 0;
                 while (parent && depth < 5) {
                     if (parent.tagName === 'BODY' || parent.tagName === 'HTML') break;
-                    if (!parent.classList.contains('omni-video-player-active')) {
-                        parent.classList.add('omni-video-player-active');
+                    if (!parent.classList.contains('nexa-video-player-active')) {
+                        parent.classList.add('nexa-video-player-active');
                     }
                     parent = parent.parentElement;
                     depth++;
@@ -83,7 +83,7 @@
 
     var observer = null;
     function setupObserver() {
-        if (!document.documentElement || !document.documentElement.classList.contains('omni-force-dark-active')) {
+        if (!document.documentElement || !document.documentElement.classList.contains('nexa-force-dark-active')) {
             if (observer) {
                 observer.disconnect();
                 observer = null;
@@ -110,13 +110,13 @@
         if (!target) return;
         
         if (hasNativeDarkTheme()) {
-            target.classList.remove('omni-force-dark-active');
+            target.classList.remove('nexa-force-dark-active');
             if (observer) {
                 observer.disconnect();
                 observer = null;
             }
         } else {
-            target.classList.add('omni-force-dark-active');
+            target.classList.add('nexa-force-dark-active');
             markVideoPlayers();
             setupObserver();
         }

@@ -6,7 +6,7 @@ On-device closed captions for videos, powered by the shared model platform.
 
 1. **Existing captions** — if the native player / page exposes a subtitle track,
    use it directly (`SubtitleOrigin.NATIVE`). ASR is never run unnecessarily.
-2. **Generated captions** — when no usable subtitles exist and Omni can
+2. **Generated captions** — when no usable subtitles exist and NEXA can
    legitimately access the audio stream of a supported (non-protected) source:
 
    ```
@@ -52,7 +52,7 @@ stale results via a monotonic seek token — skipped audio is never transcribed.
 
 ## Supported media
 
-Works when Omni can safely access a supported audio stream (e.g. local/non-DRM
+Works when NEXA can safely access a supported audio stream (e.g. local/non-DRM
 Media3 playback). It is **not** universal: DRM-backed services, in-page MSE
 playback without an accessible audio pipeline, and sites that block subtitle
 access may be unsupported.

@@ -14,7 +14,7 @@
     <string name="private_browsing_title">Penjelajahan Pribadi</string>
     <string name="private_browsing_desc">Blokir pelacak dan cookie</string>
     <string name="native_player_title">Pemutar Video Bawaan</string>
-    <string name="native_player_desc">Buka video di Omni Player dengan fitur unduhan</string>
+    <string name="native_player_desc">Buka video di NEXA Player dengan fitur unduhan</string>
     <string name="youtube_player_title">Aktifkan di YouTube</string>
     <string name="youtube_player_desc">Izinkan pemutar &amp; pengunduh bawaan pada video YouTube</string>
     <string name="ai_blocker_title">Pemblokir AI</string>
@@ -145,7 +145,7 @@
     <string name="import_error_toast">Impor gagal: %1$s</string>
     <string name="bookmarks_import">Impor</string>
     <string name="bookmarks_export">Ekspor</string>
-    <string name="export_share_subject">Ekspor Bookmark Omni</string>
+    <string name="export_share_subject">Ekspor Bookmark NEXA</string>
     <string name="export_share_title">Bagikan bookmark</string>
     <string name="export_error_toast">Ekspor gagal: %1$s</string>
 
@@ -194,8 +194,8 @@
     <string name="update_failed_title">Pemeriksaan Pembaruan Gagal</string>
     <string name="update_failed_desc">Tidak dapat terhubung ke server pembaruan (%1$s). Apakah Anda ingin memeriksa Play Store secara manual?</string>
     <string name="update_dialog_open_store">Buka Play Store</string>
-    <string name="support_github">Dukungan GitHub (RebelRoot)</string>
-    <string name="website_omnibrowser">Situs Web OmniBrowser</string>
+    <string name="support_github">Dukungan GitHub (DEVILNIHAD)</string>
+    <string name="website_nexabrowser">Situs Web NEXABrowser</string>
     <string name="update_no_update">NEXA Browser sudah versi terbaru (v%1$s)</string>
     <string name="locker_cat_images">Gambar</string>
     <string name="locker_cat_videos">Video</string>
@@ -316,7 +316,7 @@
     <string name="home_recently_visited">Baru Saja Dikunjungi</string>
     <string name="home_see_all">Lihat Semua</string>
     <string name="home_more">Lainnya</string>
-    <string name="home_shield_active">Omni Shield Aktif</string>
+    <string name="home_shield_active">NEXA Shield Aktif</string>
     <string name="home_view_report">Lihat Laporan Privasi</string>
     <string name="home_view_report_short">Lihat Laporan</string>
     <string name="privacy_report_title">Laporan Privasi</string>
@@ -339,7 +339,7 @@
     <string name="privacy_cat_retargeting">Periklanan &amp; Penargetan Ulang</string>
     <string name="privacy_cat_market_research">Riset Pasar &amp; Analitik</string>
     <string name="privacy_report_intelligent_tracking">Pencegahan Pelacakan Cerdas</string>
-    <string name="privacy_report_banner_desc">Perlindungan Pelacakan Cerdas Omni mencegah pelacak memprofilkan aktivitas web Anda dan mengumpulkan data di seluruh situs web.</string>
+    <string name="privacy_report_banner_desc">Perlindungan Pelacakan Cerdas NEXA mencegah pelacak memprofilkan aktivitas web Anda dan mengumpulkan data di seluruh situs web.</string>
     <string name="privacy_report_trackers_prevented">Pelacak Dicegah</string>
     <string name="privacy_report_est_data_saved">Perkiraan Data Dihemat</string>
     <string name="privacy_report_faster_page_load">Pemuatan Halaman Lebih Cepat</string>
@@ -419,7 +419,7 @@
     <string name="download_settings_desc">Pengunduh default, preferensi, dan aturan pengunduhan</string>
     <string name="default_downloader_title">Pengunduh Default</string>
     <string name="default_downloader_desc">Pilih mesin atau aplikasi default untuk pengunduhan file</string>
-    <string name="downloader_internal">Omni Downloader (Bawaan)</string>
+    <string name="downloader_internal">NEXA Downloader (Bawaan)</string>
     <string name="downloader_internal_desc">Mesin internal cepat dengan pendeteksi video dan dukungan vault</string>
     <string name="downloader_system">Pengunduh Sistem Android</string>
     <string name="downloader_system_desc">Layanan DownloadManager OS bawaan</string>
@@ -451,7 +451,7 @@
     <string name="send_feedback_title">Kirim Masukan Langsung</string>
     <string name="send_feedback_desc">Laporkan bug, sarankan fitur, bagikan masukan</string>
     <string name="support_github_desc">Lihat kode sumber dan laporkan masalah</string>
-    <string name="website_omnibrowser_desc">Kunjungi situs web resmi NEXA Browser</string>
+    <string name="website_nexabrowser_desc">Kunjungi situs web resmi NEXA Browser</string>
     <string name="privacy_policy_desc">Baca kebijakan privasi kami</string>
     <string name="appearance_address_bar">Bilah Alamat</string>
     <string name="appearance_top">Atas</string>
@@ -593,7 +593,7 @@
     <string name="onboarding_title_browse">Jelajahi Bebas, Jelajahi secara Pribadi</string>
     <string name="onboarding_tagline_browse">Bebas Pelacak · Sepenuhnya di Perangkat · Super Cepat</string>
     <string name="onboarding_feature_smart_bar_title">Bilah Alamat Pintar</string>
-    <string name="onboarding_feature_smart_bar_desc">Penelusuran suara, teks, dan kamera terintegrasi langsung di omnibox</string>
+    <string name="onboarding_feature_smart_bar_desc">Penelusuran suara, teks, dan kamera terintegrasi langsung di nexabox</string>
     <string name="onboarding_feature_discover_title">Feed Discover</string>
     <string name="onboarding_feature_discover_desc">Berita utama terbaru berdasarkan kategori — tanpa perlu akun</string>
     <string name="onboarding_feature_incognito_title">Mode Samaran</string>
@@ -634,7 +634,7 @@
     <string name="onboarding_nav_bottom">Ke-3 Bawah</string>
     <string name="onboarding_active_layout">Aktif: Tata Letak %1$s</string>
     <string name="onboarding_layout_toast">Tata letak diatur ke %1$s</string>
-    <string name="onboarding_title_default_browser">Jadikan Omni sebagai Browser Default Anda</string>
+    <string name="onboarding_title_default_browser">Jadikan NEXA sebagai Browser Default Anda</string>
     <string name="onboarding_tagline_default_browser">Cepat · Pribadi · Aman Setiap Hari</string>
     <string name="onboarding_feature_auto_protection_title">Perlindungan Otomatis</string>
     <string name="onboarding_feature_auto_protection_desc">Blokir skrip pelacak, pop-up, dan iklan berbahaya di setiap tautan</string>
@@ -793,8 +793,8 @@
     <string name="ext_builtin_universal_copy_desc">Lewati pembatasan situs web untuk mengaktifkan paksa pemilihan dan penyalinan teks.</string>
     <string name="ext_builtin_media_sniffer">Media Sniffer</string>
     <string name="ext_builtin_media_sniffer_desc">Lacak dan unduh segmen serta streaming dinamis HLS/DASH untuk offline.</string>
-    <string name="ext_builtin_omni_translate">Omni Translate</string>
-    <string name="ext_builtin_omni_translate_desc">Penerjemahan halaman web langsung di perangkat</string>
+    <string name="ext_builtin_nexa_translate">NEXA Translate</string>
+    <string name="ext_builtin_nexa_translate_desc">Penerjemahan halaman web langsung di perangkat</string>
     <string name="offline_ai_settings_title">AI Offline</string>
     <string name="offline_ai_settings_desc">Penerjemahan &amp; takarir di perangkat — unduh model, tanpa cloud</string>
     <string name="ext_builtin_ai_blocker">AI Blocker</string>
@@ -813,7 +813,7 @@
     <string name="wallpaper_dim_label">Redupkan Wallpaper</string>
     <string name="wallpaper_blur_label">Buramkan Wallpaper</string>
     <string name="shortcut_shape_helper">Pilih bentuk ikon pintasan Anda</string>
-    <string name="show_logo_desc">Tampilkan logo merek Omni di bagian atas</string>
+    <string name="show_logo_desc">Tampilkan logo merek NEXA di bagian atas</string>
     <string name="show_shortcuts_desc">Tautan situs akses cepat dan pintasan bawaan</string>
     <string name="show_recents_desc">Tampilkan situs yang baru dikunjungi di layar utama</string>
     <string name="privacy_stats_widget">Widget Statistik Privasi</string>
@@ -959,7 +959,7 @@
     <string name="qr_gallery">Gambar Galeri</string>
     <string name="qr_scan_another">Pindai Kode Lain</string>
     <string name="qr_scan_code">Pindai kode</string>
-    <string name="qr_secured_by">Diamankan oleh Pemindai QR Omni</string>
+    <string name="qr_secured_by">Diamankan oleh Pemindai QR NEXA</string>
     <string name="qr_detected">Kode QR Terdeteksi</string>
     <string name="qr_found_codes">Ditemukan %1$d kode (%2$d/%3$d)</string>
     <string name="qr_copied_clipboard">Disalin ke papan klip</string>
@@ -1155,10 +1155,10 @@
     <!-- Download Sheet -->
     <string name="download_sheet_mp3">MP3</string>
     <string name="download_toast_external">Membuka pengelola unduhan eksternal…</string>
-    <string name="download_toast_no_handoff">Media ini memerlukan pengunduh bawaan Omni — pengalihan tidak didukung</string>
+    <string name="download_toast_no_handoff">Media ini memerlukan pengunduh bawaan NEXA — pengalihan tidak didukung</string>
     <string name="download_toast_started">Unduhan dimulai...</string>
     <string name="download_toast_locker">Mengunduh ke Brankas...</string>
-    <string name="download_toast_mp3_no_handoff">Ekstraksi MP3 memerlukan pengunduh bawaan Omni — pengalihan tidak didukung</string>
+    <string name="download_toast_mp3_no_handoff">Ekstraksi MP3 memerlukan pengunduh bawaan NEXA — pengalihan tidak didukung</string>
     <string name="download_toast_mp3_started">Mengunduh sebagai MP3...</string>
     <string name="download_destination_local">Unduh Secara Lokal</string>
     <string name="download_destination_vault">Simpan ke Brankas Pribadi 🔒</string>
@@ -1166,12 +1166,12 @@
     <!-- Manga Download Toasts -->
     <string name="manga_toast_starting">⏳ Memulai unduhan (%1$s hingga %2$s)...</string>
     <string name="manga_toast_pdf_vault">🔒 PDF Manga (%1$d halaman) disimpan ke Brankas Pribadi</string>
-    <string name="manga_toast_pdf_downloads">📄 PDF Manga (%1$d halaman) disimpan ke Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_pdf_downloads">📄 PDF Manga (%1$d halaman) disimpan ke Downloads/NEXABrowser/%2$s</string>
     <string name="manga_toast_pdf_failed">Gagal menyusun PDF: %1$s</string>
     <string name="manga_mode_pdf">Dokumen PDF</string>
     <string name="manga_mode_images">%1$d gambar</string>
     <string name="manga_toast_images_vault">🔒 %1$d gambar disimpan ke Brankas Pribadi</string>
-    <string name="manga_toast_images_downloads">✅ %1$d gambar berhasil diunduh ke Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_images_downloads">✅ %1$d gambar berhasil diunduh ke Downloads/NEXABrowser/%2$s</string>
 
     <!-- Download Sheet -->
     <string name="download_media_title">Unduh Media</string>
@@ -1391,8 +1391,8 @@
     <string name="media_sniffer_add_domain_btn">Tambah Domain</string>
     <string name="media_sniffer_add_current_site">+ Tambahkan situs saat ini (%1$s)</string>
     <string name="media_sniffer_no_blocked_sites">Belum ada situs web yang ditambahkan ke daftar blokir</string>
-    <string name="browser_omni_logo_cd">Logo Kustom NEXA Browser</string>
-    <string name="browser_omni_logo_cd2">Logo NEXA Browser</string>
+    <string name="browser_nexa_logo_cd">Logo Kustom NEXA Browser</string>
+    <string name="browser_nexa_logo_cd2">Logo NEXA Browser</string>
     <string name="browser_reload_cd">Muat ulang</string>
 
     <!-- Phone Address Bar -->
@@ -1596,7 +1596,7 @@
     <!-- Privacy Hub -->
     <string name="privacy_hub_back_cd">Kembali</string>
 
-    <!-- 3-dot menu (omnimenuDropdown) -->
+    <!-- 3-dot menu (nexamenuDropdown) -->
     <string name="menu_history">Riwayat</string>
     <string name="menu_clear_browsing_data">Hapus Data Penjelajahan</string>
     <string name="menu_downloads">Unduhan</string>
@@ -1799,14 +1799,14 @@
     <string name="download_copy_url">Salin tautan unduhan</string>
     <string name="autofill_provider_title">Penyedia isi otomatis</string>
     <string name="autofill_provider_system">Sistem Android (Bitwarden, dll.)</string>
-    <string name="autofill_provider_omni">Brankas sandi Omni</string>
+    <string name="autofill_provider_nexa">Brankas sandi NEXA</string>
     <string name="autofill_provider_both">Keduanya</string>
     <string name="extension_download_policy_title">Unduhan ekstensi</string>
     <string name="extension_download_policy_ask">Tanyakan setiap kali</string>
     <string name="extension_download_policy_allow">Selalu izinkan ekstensi tepercaya</string>
     <string name="extension_download_policy_never">Jangan pernah izinkan</string>
 
-    <string name="sync_title">Omni Sync</string>
+    <string name="sync_title">NEXA Sync</string>
     <string name="sync_subtitle">Sinkronisasi Multiperangkat Cloud &amp; P2P</string>
     <string name="sync_fxa_title">Sinkronisasi Akun Firefox</string>
     <string name="sync_fxa_subtitle">Sinkronisasi Cloud Mozilla</string>
@@ -1821,10 +1821,10 @@
     <string name="sync_fxa_desc">Masuk dengan Akun Firefox Anda untuk menyinkronkan markah secara otomatis, tab terbuka dari PC/Mac Anda, riwayat penjelajahan, dan sandi secara lancar melalui Mozilla Cloud.</string>
     <string name="sync_fxa_complete_toast">Sinkronisasi Cloud Firefox selesai!</string>
     <string name="sync_fxa_signed_out_toast">Keluar dari Akun Firefox</string>
-    <string name="sync_mesh_title">Omni Sync Mesh (Offline / LAN)</string>
+    <string name="sync_mesh_title">NEXA Sync Mesh (Offline / LAN)</string>
     <string name="sync_mesh_subtitle">Tanpa Cloud · 100% P2P E2EE (Mendatang)</string>
     <string name="sync_mesh_upcoming_badge">Fitur Mendatang — Tahap Pengujian</string>
-    <string name="sync_mesh_upcoming_desc">Omni Sync Mesh akan segera hadir. Pengujian memerlukan pemasangan Ekstensi Omni Sync (Pengujian) di browser desktop Anda.</string>
+    <string name="sync_mesh_upcoming_desc">NEXA Sync Mesh akan segera hadir. Pengujian memerlukan pemasangan Ekstensi NEXA Sync (Pengujian) di browser desktop Anda.</string>
     <string name="sync_mesh_desc">Sinkronkan langsung markah, tab terbuka, riwayat, dan preferensi portabel secara peer-to-peer melalui Wi-Fi tanpa server pusat.</string>
     <string name="sync_pair_device">Pasangkan Perangkat</string>
     <string name="sync_sync_p2p">Sinkronkan P2P</string>
@@ -1836,7 +1836,7 @@
     <string name="sync_outbox_journal">Jurnal Kotak Keluar</string>
     <string name="sync_pending_mutations">%1$d mutasi tertunda</string>
     <string name="sync_safe_layer_title">Lapisan Sinkronisasi Aman Non-Destruktif</string>
-    <string name="sync_safe_layer_desc">Markah &amp; data browser yang ada tidak akan pernah dirusak atau ditimpa. Omni Sync beroperasi dalam lapisan sinkronisasi terisolasi yang terenkripsi.</string>
+    <string name="sync_safe_layer_desc">Markah &amp; data browser yang ada tidak akan pernah dirusak atau ditimpa. NEXA Sync beroperasi dalam lapisan sinkronisasi terisolasi yang terenkripsi.</string>
     <string name="sync_section_actions">Hub Impor &amp; Ekspor</string>
     <string name="sync_btn_from_pc">Dari PC</string>
     <string name="sync_btn_to_pc">Ke PC</string>
@@ -1870,11 +1870,11 @@
     <string name="sync_guarantee_settings_title">Daftar Izin Setelan Portabel</string>
     <string name="sync_guarantee_settings_desc">Menyinkronkan mesin telusur, tema gelap, dan aturan pemblokiran iklan sembari menjaga parameter perangkat keras khusus perangkat tetap terisolasi.</string>
     <string name="sync_section_browsers">Browser Desktop yang Didukung (Ekstensi Pengujian)</string>
-    <string name="sync_browsers_desc">Sinkronisasi mesh P2P langsung memerlukan pemasangan Ekstensi Omni Sync (Beta / Pengujian) di browser desktop Anda:</string>
+    <string name="sync_browsers_desc">Sinkronisasi mesh P2P langsung memerlukan pemasangan Ekstensi NEXA Sync (Beta / Pengujian) di browser desktop Anda:</string>
     <string name="sync_section_paired_devices">Perangkat Terpasang (%1$d)</string>
     <string name="sync_no_paired_devices">Belum ada perangkat lain yang dipasangkan. Ketuk \'Pasangkan Perangkat\' untuk membuat kode QR atau memindai dari browser desktop Anda.</string>
     <string name="sync_pair_dialog_title">Pasangkan Perangkat</string>
-    <string name="sync_pair_dialog_extension_req">Memerlukan Ekstensi Omni Sync (Pengujian) yang terpasang di browser desktop Anda.</string>
+    <string name="sync_pair_dialog_extension_req">Memerlukan Ekstensi NEXA Sync (Pengujian) yang terpasang di browser desktop Anda.</string>
     <string name="sync_scan_desktop_qr">Pindai Kode QR Desktop</string>
     <string name="sync_share_invitation_code">Atau bagikan kode undangan ponsel ini ke PC Anda:</string>
     <string name="sync_copy_phone_code">Salin Kode Pemasangan Ponsel</string>
@@ -1935,5 +1935,5 @@
     <string name="home_section_privacy">Statistik privasi</string>
     <string name="tool_spoof_identity">Menyamarkan identitas</string>
     <string name="tool_torrent_magnet">Torrent &amp; Magnet</string>
-    <string name="tool_omni_beam">Omni Beam</string>
+    <string name="tool_nexa_beam">NEXA Beam</string>
 </resources>

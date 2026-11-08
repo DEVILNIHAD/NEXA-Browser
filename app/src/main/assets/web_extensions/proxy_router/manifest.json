@@ -1,11 +1,11 @@
 {
   "manifest_version": 2,
-  "name": "Omni Proxy Router",
+  "name": "NEXA Proxy Router",
   "version": "1.0.0",
   "description": "Routes browser traffic through the active Tor / SOCKS proxy via the WebExtension proxy API.",
   "browser_specific_settings": {
     "gecko": {
-      "id": "omni-proxy-router@omnibrowser.app"
+      "id": "nexa-proxy-router@nexabrowser.app"
     }
   },
   "permissions": [

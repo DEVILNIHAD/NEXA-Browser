@@ -1,12 +1,12 @@
 /*
- * Omni Translate content script.
+ * NEXA Translate content script.
  *
  * Security model:
  *  - This script runs in the PAGE's content process but has NO access to the
  *    app's model runtime, file storage, or download manager. It can only send
  *    plain text to the app (via runtime.sendMessage) and receive translated
  *    text back. It can never choose a model URL or trigger installation.
- *  - It only acts after the app dispatches the `omni-translate-start` event
+ *  - It only acts after the app dispatches the `nexa-translate-start` event
  *    (user-initiated), so arbitrary page scripts cannot silently use it.
  *  - It never translates nodes already marked translated, preventing loops.
  */
@@ -21,7 +21,7 @@
     while (p) {
       var tag = p.tagName;
       if (SKIP[tag]) return NodeFilter.FILTER_REJECT;
-      if (p.dataset && p.dataset.omniTranslated === "1") return NodeFilter.FILTER_REJECT;
+      if (p.dataset && p.dataset.nexaTranslated === "1") return NodeFilter.FILTER_REJECT;
       if (tag === "INPUT" && p.type && (p.type === "password" || p.type === "hidden")) return NodeFilter.FILTER_REJECT;
       p = p.parentElement;
     }
@@ -49,9 +49,9 @@
       var key = "" + j;
       if (map[key] !== undefined) {
         var el = n.parentElement;
-        if (el && el.dataset && el.dataset.omniOriginal === undefined) el.dataset.omniOriginal = n.nodeValue;
+        if (el && el.dataset && el.dataset.nexaOriginal === undefined) el.dataset.nexaOriginal = n.nodeValue;
         n.nodeValue = map[key];
-        if (el) el.dataset.omniTranslated = "1";
+        if (el) el.dataset.nexaTranslated = "1";
       }
       j++;
     }
@@ -74,7 +74,7 @@
     if (!enabled) return;
     var imgs = document.querySelectorAll("img");
     imgs.forEach(function (img, idx) {
-      if (img.dataset && img.dataset.omniImgTranslated === "1") return;
+      if (img.dataset && img.dataset.nexaImgTranslated === "1") return;
       var w = img.naturalWidth || img.width || 0;
       var h = img.naturalHeight || img.height || 0;
       // Target manga / comic pages or prominent graphics (>= 180x180)
@@ -85,7 +85,7 @@
 
       var imgId = "img_" + idx + "_" + (img.src ? img.src.substring(img.src.lastIndexOf("/") + 1).slice(0, 20) : "page");
       browser.runtime.sendMessage({
-        nativeApp: "omniTranslate",
+        nativeApp: "nexaTranslate",
         type: "translateImage",
         imageId: imgId,
         base64: b64
@@ -93,9 +93,9 @@
         try {
           var parsed = typeof resp === "string" ? JSON.parse(resp) : resp;
           if (parsed && parsed.translatedSrc) {
-            if (!img.dataset.omniOriginalSrc) img.dataset.omniOriginalSrc = img.src;
+            if (!img.dataset.nexaOriginalSrc) img.dataset.nexaOriginalSrc = img.src;
             img.src = parsed.translatedSrc;
-            img.dataset.omniImgTranslated = "1";
+            img.dataset.nexaImgTranslated = "1";
           }
         } catch (e) { /* keep original */ }
       }).catch(function () {});
@@ -109,19 +109,19 @@
     var n;
     while ((n = w.nextNode())) {
       var el = n.parentElement;
-      if (el && el.dataset && el.dataset.omniTranslated === "1" && el.dataset.omniOriginal !== undefined) {
-        n.nodeValue = el.dataset.omniOriginal;
-        delete el.dataset.omniTranslated;
-        delete el.dataset.omniOriginal;
+      if (el && el.dataset && el.dataset.nexaTranslated === "1" && el.dataset.nexaOriginal !== undefined) {
+        n.nodeValue = el.dataset.nexaOriginal;
+        delete el.dataset.nexaTranslated;
+        delete el.dataset.nexaOriginal;
       }
     }
-    var imgs = document.querySelectorAll("img[data-omni-img-translated='1']");
+    var imgs = document.querySelectorAll("img[data-nexa-img-translated='1']");
     imgs.forEach(function (img) {
-      if (img.dataset.omniOriginalSrc) {
-        img.src = img.dataset.omniOriginalSrc;
-        delete img.dataset.omniOriginalSrc;
+      if (img.dataset.nexaOriginalSrc) {
+        img.src = img.dataset.nexaOriginalSrc;
+        delete img.dataset.nexaOriginalSrc;
       }
-      delete img.dataset.omniImgTranslated;
+      delete img.dataset.nexaImgTranslated;
     });
   }
 
@@ -129,7 +129,7 @@
     if (!enabled) return;
     var segs = collect();
     if (segs.length) {
-      browser.runtime.sendMessage({ nativeApp: "omniTranslate", type: "translate", segments: segs })
+      browser.runtime.sendMessage({ nativeApp: "nexaTranslate", type: "translate", segments: segs })
         .then(function (resp) {
           try { applyMap(JSON.parse(resp)); } catch (e) { /* keep original */ }
         })
@@ -153,12 +153,12 @@
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
   }
 
-  document.addEventListener("omni-translate-start", function () {
+  document.addEventListener("nexa-translate-start", function () {
     enabled = true;
     translateOnce();
     startLive();
   });
-  document.addEventListener("omni-translate-stop", function () {
+  document.addEventListener("nexa-translate-stop", function () {
     enabled = false;
     if (observer) { observer.disconnect(); observer = null; }
     restore();

@@ -1,4 +1,4 @@
-# Omni Sync Browser Extension Permission Justifications
+# NEXA Sync Browser Extension Permission Justifications
 
 ## 1. `bookmarks`
 - **Purpose:** Read and write browser bookmarks and bookmark folders to synchronize them in real time across the user's paired NEXA Browser and desktop browser instances.

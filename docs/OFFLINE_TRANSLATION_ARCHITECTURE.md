@@ -18,7 +18,7 @@ webpage translation (master prompt Phase 3) and the resulting architecture.
 - **Quality:** high (neural MT, good for many pairs).
 - **License:** Marian is MIT; Bergamot runtime is MPL-2.0; OPUS-MT model weights
   are mostly permissively licensed (Apache-2.0 / MPL-2.0) — all compatible with
-  Omni's GPL app.
+  NEXA's GPL app.
 - **Size/RAM:** compact quantized models (~20–80 MB per pair), ARM64-friendly.
 - **Integration:** requires shipping a native inference runtime in the app
   (ONNX Runtime Mobile or TFLite). That runtime is a library, not model weights,

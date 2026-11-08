@@ -1,7 +1,7 @@
-# Omni Offline AI — Overview
+# NEXA Offline AI — Overview
 
 Privacy-first, on-device AI platform for NEXA Browser. No cloud inference, no
-Omni-hosted model CDN, no large models in the base APK, no audio/page-text
+NEXA-hosted model CDN, no large models in the base APK, no audio/page-text
 upload when offline mode is selected.
 
 ## Modules
@@ -11,7 +11,7 @@ upload when offline mode is selected.
 | Translation providers | `ai/translation/` | `TranslationProvider` abstraction, `OnlineTranslationProvider` (original Google "gtx"), `OfflineTranslationProvider`, `TranslationCoordinator` (enforces `OFFLINE_ONLY`), `TranslationMode`. |
 | Offline engines | `ai/engine/` | `OfflineTranslationEngine` interface, `TranslationEngineManager` (selects best engine), `LexiconTranslationEngine` (bundled offline baseline). |
 | Model platform | `ai/models/` | `ModelCatalog`, `ModelDescriptor`, `ModelStorage`, `ModelVerifier` (SHA-256), `ModelDownloader` (resumable HTTP Range), `ModelRepository`, `ModelPlatform`, WorkManager `ModelDownloadWorker`. |
-| Page translation | `ai/web/` | `WebTranslationController`, `OmniTranslateBridge`, `PageTranslationPlanner` (pure dedup/translate), `omni_translate` content-script extension. |
+| Page translation | `ai/web/` | `WebTranslationController`, `NEXATranslateBridge`, `PageTranslationPlanner` (pure dedup/translate), `nexa_translate` content-script extension. |
 | Captions | `ai/asr/`, `ai/captions/` | `AsrEngine` abstraction, `CaptionSegmenter`, `WebVtt`, `SubtitleSource`, `CaptionTranslation`, `SubtitleController`. |
 
 ## Translation modes
@@ -31,7 +31,7 @@ using the bundled lexicon offline where possible. Users can choose strict
 - Model downloads are application-owned: URLs come only from the bundled catalog,
   restricted to an allow-list of hosts. No cookies/headers/origin from webpages
   are attached, and webpage JS can never choose a model URL.
-- The `omni_translate` content script only sends plain text to the app; it never
+- The `nexa_translate` content script only sends plain text to the app; it never
   receives model paths, files, or native runtime access, and only acts after a
   user-initiated event.
 - Private (incognito) tabs never share translation/caption caches with normal

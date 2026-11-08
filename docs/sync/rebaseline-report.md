@@ -1,8 +1,8 @@
-# Omni Sync — Phase 00 Rebaseline Audit & Design Freeze Report
+# NEXA Sync — Phase 00 Rebaseline Audit & Design Freeze Report
 
 **Audit Date:** 2026-08-22  
 **Auditor:** Principal Software Architect & Security Engineer  
-**Repository:** `omni-browser` (`REBEL-ROOT/omni-browser`)  
+**Repository:** `upstream-derived source` (original project: `REBEL-ROOT/omni-browser`)  
 **Status:** COMPLETE · GO FOR PHASE 01  
 
 ---
@@ -32,7 +32,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                               OMNI BROWSER                                  │
+│                               NEXA BROWSER                                  │
 │                                                                             │
 │  ┌───────────────────────┐  ┌──────────────────────┐  ┌──────────────────┐  │
 │  │     UI Layer          │  │     Browser Core     │  │   Offline AI     │  │
@@ -48,7 +48,7 @@
 │  │    [Legacy: browser_bookmarks.json in BrowserViewModel_Bookmarks.kt]  │  │
 │  │  • History: browser_history.json (Capped 500 entries)                 │  │
 │  │  • Session: browser_session_states.json (Debounced Atomic v1)         │  │
-│  │  • Settings: omni_settings (Preferences DataStore)                    │  │
+│  │  • Settings: nexa_settings (Preferences DataStore)                    │  │
 │  │  • Passwords / Vault: SQLCipher Encrypted DBs + Android Keystore      │  │
 │  └──────────────────────────────────┬────────────────────────────────────┘  │
 │                                     │                                       │
@@ -68,25 +68,25 @@
 
 | Subsystem | Exact Source File(s) | Storage Format & Location | Mutation Entry Points |
 | :--- | :--- | :--- | :--- |
-| **Canonical Bookmarks (v2)** | `com/rebelroot/omni/bookmarks/model/OmniBookmark.kt`<br>`com/rebelroot/omni/bookmarks/model/BookmarkCollection.kt`<br>`com/rebelroot/omni/bookmarks/storage/BookmarkStorage.kt` | Atomic JSON (`browser_bookmarks_v2.json` in `context.filesDir`) | `BookmarkCollection.addBookmark()`, `addFolder()`, `moveNode()`, `deleteNode()`, `renameFolder()`, `saveBookmarks()` |
-| **Legacy Bookmarks (v1)** | `com/rebelroot/omni/browser/BookmarkEntry.kt`<br>`com/rebelroot/omni/browser/BrowserViewModel_Bookmarks.kt` | JSON Array (`browser_bookmarks.json` in `context.filesDir`) | `BrowserViewModel.addToBookmarks()`, `removeBookmark()`, `clearAllBookmarks()` |
-| **History** | `com/rebelroot/omni/browser/HistoryEntry.kt`<br>`com/rebelroot/omni/browser/BrowserViewModel_History.kt` | JSON Array (`browser_history.json` in `context.filesDir`) | `BrowserViewModel.addToHistory()`, `deleteHistoryEntry()`, `clearAllHistory()`, `clearHistorySince()` |
-| **Tabs & Session** | `com/rebelroot/omni/browser/TabState.kt`<br>`com/rebelroot/omni/browser/session/OmniSessionState.kt`<br>`com/rebelroot/omni/browser/session/SessionStatePersistence.kt` | Debounced Atomic JSON (`browser_session_states.json` in `context.filesDir`) | `SessionStatePersistence.requestPersist()`, `forceCheckpoint()`, `removeDurableState()` |
-| **Settings & Preferences** | `com/rebelroot/omni/browser/BrowserViewModel.kt` | Android Preferences DataStore (`omni_settings`) | `dataStore.edit { prefs -> ... }` |
-| **Password Vault** | `com/rebelroot/omni/tools/passwords/PasswordVaultManager.kt`<br>`com/rebelroot/omni/tools/passwords/PasswordDatabase.kt` | Room + SQLCipher Encrypted SQLite DB | `PasswordVaultManager.savePassword()`, `deletePassword()` |
-| **Safe Locker** | `com/rebelroot/omni/tools/locker/PrivateLockerManager.kt`<br>`com/rebelroot/omni/tools/locker/LockerDatabase.kt` | SQLCipher Encrypted DB + App Private Files | `PrivateLockerManager.importFile()`, `deleteFile()` |
-| **QR Tools** | `com/rebelroot/omni/tools/qrcode/BarcodeGenerator.kt`<br>`com/rebelroot/omni/tools/qrcode/QrCodeDecoder.kt` | ZXing Memory Bitmaps (Pure FOSS) | `BarcodeGenerator.generateQRCode()`, `QrCodeDecoder.decodeQRCode()` |
-| **VPN & Proxy** | `com/rebelroot/omni/privacy/VpnManager.kt`<br>`com/rebelroot/omni/privacy/TorManager.kt`<br>`com/rebelroot/omni/privacy/EmbeddedTorManager.kt` | WireGuard Tunnel + kmp-tor in-process daemon | `VpnManager.connect()`, `TorManager.start()` |
+| **Canonical Bookmarks (v2)** | `com/devilnihad/nexa/bookmarks/model/NEXABookmark.kt`<br>`com/devilnihad/nexa/bookmarks/model/BookmarkCollection.kt`<br>`com/devilnihad/nexa/bookmarks/storage/BookmarkStorage.kt` | Atomic JSON (`browser_bookmarks_v2.json` in `context.filesDir`) | `BookmarkCollection.addBookmark()`, `addFolder()`, `moveNode()`, `deleteNode()`, `renameFolder()`, `saveBookmarks()` |
+| **Legacy Bookmarks (v1)** | `com/devilnihad/nexa/browser/BookmarkEntry.kt`<br>`com/devilnihad/nexa/browser/BrowserViewModel_Bookmarks.kt` | JSON Array (`browser_bookmarks.json` in `context.filesDir`) | `BrowserViewModel.addToBookmarks()`, `removeBookmark()`, `clearAllBookmarks()` |
+| **History** | `com/devilnihad/nexa/browser/HistoryEntry.kt`<br>`com/devilnihad/nexa/browser/BrowserViewModel_History.kt` | JSON Array (`browser_history.json` in `context.filesDir`) | `BrowserViewModel.addToHistory()`, `deleteHistoryEntry()`, `clearAllHistory()`, `clearHistorySince()` |
+| **Tabs & Session** | `com/devilnihad/nexa/browser/TabState.kt`<br>`com/devilnihad/nexa/browser/session/NEXASessionState.kt`<br>`com/devilnihad/nexa/browser/session/SessionStatePersistence.kt` | Debounced Atomic JSON (`browser_session_states.json` in `context.filesDir`) | `SessionStatePersistence.requestPersist()`, `forceCheckpoint()`, `removeDurableState()` |
+| **Settings & Preferences** | `com/devilnihad/nexa/browser/BrowserViewModel.kt` | Android Preferences DataStore (`nexa_settings`) | `dataStore.edit { prefs -> ... }` |
+| **Password Vault** | `com/devilnihad/nexa/tools/passwords/PasswordVaultManager.kt`<br>`com/devilnihad/nexa/tools/passwords/PasswordDatabase.kt` | Room + SQLCipher Encrypted SQLite DB | `PasswordVaultManager.savePassword()`, `deletePassword()` |
+| **Safe Locker** | `com/devilnihad/nexa/tools/locker/PrivateLockerManager.kt`<br>`com/devilnihad/nexa/tools/locker/LockerDatabase.kt` | SQLCipher Encrypted DB + App Private Files | `PrivateLockerManager.importFile()`, `deleteFile()` |
+| **QR Tools** | `com/devilnihad/nexa/tools/qrcode/BarcodeGenerator.kt`<br>`com/devilnihad/nexa/tools/qrcode/QrCodeDecoder.kt` | ZXing Memory Bitmaps (Pure FOSS) | `BarcodeGenerator.generateQRCode()`, `QrCodeDecoder.decodeQRCode()` |
+| **VPN & Proxy** | `com/devilnihad/nexa/privacy/VpnManager.kt`<br>`com/devilnihad/nexa/privacy/TorManager.kt`<br>`com/devilnihad/nexa/privacy/EmbeddedTorManager.kt` | WireGuard Tunnel + kmp-tor in-process daemon | `VpnManager.connect()`, `TorManager.start()` |
 
 ---
 
 ## 4. Exact Bookmark Data Contract & Mutation Boundary
 
-### Canonical Bookmark Data Model (`OmniBookmark.kt`)
+### Canonical Bookmark Data Model (`NEXABookmark.kt`)
 ```kotlin
 const val ROOT_FOLDER_ID: String = "root"
 
-data class OmniBookmark(
+data class NEXABookmark(
     val id: String,        // UUID string — canonical sync identity
     val parentId: String,  // ROOT_FOLDER_ID or parent folder UUID
     val position: Long,    // 0-based dense index within parent
@@ -96,7 +96,7 @@ data class OmniBookmark(
     val modifiedAt: Long
 )
 
-data class OmniBookmarkFolder(
+data class NEXABookmarkFolder(
     val id: String,        // UUID string — canonical sync identity
     val parentId: String,  // ROOT_FOLDER_ID or parent folder UUID
     val position: Long,    // 0-based dense index within parent
@@ -120,9 +120,9 @@ data class OmniBookmarkFolder(
 
 ## 5. Tab & Session Contract
 
-### Data Model (`OmniSessionState.kt`)
+### Data Model (`NEXASessionState.kt`)
 ```kotlin
-data class OmniSessionState(
+data class NEXASessionState(
     val schemaVersion: Int = 1,
     val tabId: String,
     val sessionStateBytes: ByteArray, // Opaque serialized GeckoSession state
@@ -176,8 +176,8 @@ data class TabMetadata(
 ## 7. WebExtension & Native Bridge Findings
 
 - **GeckoView WebExtension Runtime:** GeckoView provides a native WebExtension host via `GeckoRuntime.webExtensionController`. WebExtensions communicate via `WebExtension.MessageDelegate` and `WebExtension.PortDelegate`.
-- **Privilege Separation:** Privileged native commands (`OMNI_*` alerts) are origin-checked via `isTrustedOmniOrigin()` in `BrowserViewModel_Session.kt`.
-- **Desktop Separation:** Desktop companion extensions (Chrome MV3, Firefox) will run directly inside their native browser extension hosts and communicate with Omni Sync via the shared TypeScript protocol core (Phase 08) over LAN / WebRTC, NOT through GeckoView internal messaging.
+- **Privilege Separation:** Privileged native commands (`NEXA_*` alerts) are origin-checked via `isTrustedNEXAOrigin()` in `BrowserViewModel_Session.kt`.
+- **Desktop Separation:** Desktop companion extensions (Chrome MV3, Firefox) will run directly inside their native browser extension hosts and communicate with NEXA Sync via the shared TypeScript protocol core (Phase 08) over LAN / WebRTC, NOT through GeckoView internal messaging.
 
 ---
 
@@ -259,7 +259,7 @@ Phase 12: Tabs Sync                     Phase 13: History Sync          Phase 14
 
 - **Entities:** Bookmarks & Bookmark Folders (Full hierarchy, dense positions, titles, URLs).
 - **Transports:** Local LAN / Wi-Fi discovery + encrypted direct sockets.
-- **Platforms:** Android (`omni-browser`) $\leftrightarrow$ Android (`omni-browser`), followed by Chrome Extension companion.
+- **Platforms:** Android (`nexa-browser`) $\leftrightarrow$ Android (`nexa-browser`), followed by Chrome Extension companion.
 - **Pairing:** QR Code transport (ZXing) with human-verifiable SAS / confirmation code.
 - **Security:** Platform-backed keys (Android Keystore / WebCrypto), authenticated encryption, replay nonce verification.
 
@@ -267,6 +267,6 @@ Phase 12: Tabs Sync                     Phase 13: History Sync          Phase 14
 
 ## 12. Final Rebaseline Decision: GO
 
-All required architectural facts, storage locations, data contracts, and security constraints have been evidenced from the live `omni-browser` repository. Zero critical integration points remain `UNKNOWN`.
+All required architectural facts, storage locations, data contracts, and security constraints have been evidenced from the live `nexa-browser` repository. Zero critical integration points remain `UNKNOWN`.
 
 **Next Phase:** Proceed to **Phase 01: Canonical Sync Domain & Protocol Contract**.

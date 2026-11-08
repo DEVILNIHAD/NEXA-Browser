@@ -1,11 +1,11 @@
 {
     "manifest_version": 2,
-    "name": "Omni Media Grabber",
+    "name": "NEXA Media Grabber",
     "version": "2.1.0",
     "description": "Passively detects video stream URLs for download without blocking playback.",
     "browser_specific_settings": {
         "gecko": {
-            "id": "omni-media-grabber@omnibrowser.app"
+            "id": "nexa-media-grabber@nexabrowser.app"
         }
     },
     "background": {

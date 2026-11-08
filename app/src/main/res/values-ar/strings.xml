@@ -14,7 +14,7 @@
     <string name="private_browsing_title">التصفح الخاص</string>
     <string name="private_browsing_desc">حظر أدوات التتبع وملفات تعريف الارتباط</string>
     <string name="native_player_title">مشغل الفيديو الأصلي</string>
-    <string name="native_player_desc">فتح الفيديوهات في مشغل Omni مع الدعم للتنزيل</string>
+    <string name="native_player_desc">فتح الفيديوهات في مشغل NEXA مع الدعم للتنزيل</string>
     <string name="youtube_player_title">تمكين على YouTube</string>
     <string name="youtube_player_desc">السماح بالمشغل الأصلي والتنزيل لفيديوهات YouTube</string>
     <string name="ai_blocker_title">حاظر الذكاء الاصطناعي</string>
@@ -164,8 +164,8 @@
     <string name="update_failed_title">فشل التحقق من التحديث</string>
     <string name="update_failed_desc">تعذر الاتصال بسيرفر التحديث (%1$s).</string>
     <string name="update_dialog_open_store">فتح المتجر</string>
-    <string name="support_github">دعم GitHub (RebelRoot)</string>
-    <string name="website_omnibrowser">موقع OmniBrowser</string>
+    <string name="support_github">دعم GitHub (DEVILNIHAD)</string>
+    <string name="website_nexabrowser">موقع NEXABrowser</string>
     <string name="update_no_update">NEXA Browser محدث بأحدث إصدار (v%1$s)</string>
     <string name="locker_cat_images">الصور</string>
     <string name="locker_cat_videos">الفيديوهات</string>
@@ -286,7 +286,7 @@
     <string name="home_recently_visited">المزارة مؤخرًا</string>
     <string name="home_see_all">عرض الكل</string>
     <string name="home_more">المزيد</string>
-    <string name="home_shield_active">درع Omni نشط</string>
+    <string name="home_shield_active">درع NEXA نشط</string>
     <string name="home_view_report">عرض تقرير الخصوصية</string>
     <string name="home_view_report_short">عرض التقرير</string>
     <string name="privacy_report_title">تقرير الخصوصية</string>
@@ -309,7 +309,7 @@
     <string name="privacy_cat_retargeting">الإعلانات وإعادة الاستهداف</string>
     <string name="privacy_cat_market_research">أبحاث السوق والتحليلات</string>
     <string name="privacy_report_intelligent_tracking">منع التتبع الذكي</string>
-    <string name="privacy_report_banner_desc">تمنع حماية التتبع الذكية من Omni المتتبعات من إنشاء ملف تعريف لنشاطك على الويب وجمع البيانات عبر المواقع الإلكترونية.</string>
+    <string name="privacy_report_banner_desc">تمنع حماية التتبع الذكية من NEXA المتتبعات من إنشاء ملف تعريف لنشاطك على الويب وجمع البيانات عبر المواقع الإلكترونية.</string>
     <string name="privacy_report_trackers_prevented">المتتبعات الممنوعة</string>
     <string name="privacy_report_est_data_saved">تقدير البيانات المحفوظة</string>
     <string name="privacy_report_faster_page_load">تحميل أسرع للصفحات</string>
@@ -390,7 +390,7 @@
     <string name="send_feedback_title">إرسال ملاحظات مباشرة</string>
     <string name="send_feedback_desc">الإبلاغ عن الأخطاء، اقتراح الميزات ومشاركة الأفكار</string>
     <string name="support_github_desc">عرض الشفرة المصدرية والإبلاغ عن المشكلات</string>
-    <string name="website_omnibrowser_desc">زيارة الموقع الرسمي لمتصفح NEXA Browser</string>
+    <string name="website_nexabrowser_desc">زيارة الموقع الرسمي لمتصفح NEXA Browser</string>
     <string name="privacy_policy_desc">قراءة سياسة الخصوصية الخاصة بنا</string>
     <string name="appearance_address_bar">شريط العنوان</string>
     <string name="appearance_top">أعلى</string>
@@ -569,7 +569,7 @@
     <string name="onboarding_nav_bottom">3. سفلي</string>
     <string name="onboarding_active_layout">النشط: تخطيط %1$s</string>
     <string name="onboarding_layout_toast">تم ضبط التخطيط على %1$s</string>
-    <string name="onboarding_title_default_browser">اجعل Omni متصفحك\nالافتراضي</string>
+    <string name="onboarding_title_default_browser">اجعل NEXA متصفحك\nالافتراضي</string>
     <string name="onboarding_tagline_default_browser">سريع · خاص · آمن كل يوم</string>
     <string name="onboarding_feature_auto_protection_title">حماية تلقائية</string>
     <string name="onboarding_feature_auto_protection_desc">حظر نص التتبع والإعلانات الضارة في كل رابط</string>
@@ -577,8 +577,8 @@
     <string name="onboarding_feature_lightning_desc">عرض فوري للصفحة دون تباطؤ في القياس عن بُعد</string>
     <string name="onboarding_feature_encrypted_title">مشفر وآمن</string>
     <string name="onboarding_feature_encrypted_desc">حماية بيومترية وتشفير HTTPS تلقائي لجميع المواقع</string>
-    <string name="onboarding_default_card_title">اجعل Omni متصفحك الافتراضي</string>
-    <string name="onboarding_default_card_desc">افتح إعدادات النظام لاختيار Omni كمتصفح افتراضي</string>
+    <string name="onboarding_default_card_title">اجعل NEXA متصفحك الافتراضي</string>
+    <string name="onboarding_default_card_desc">افتح إعدادات النظام لاختيار NEXA كمتصفح افتراضي</string>
     <string name="onboarding_set_default_button">تعيين كمتصفح افتراضي</string>
     <string name="menu_incognito">خفي</string>
     <string name="menu_group">مجموعة</string>
@@ -695,7 +695,7 @@
     <string name="ext_loading_extension">جارٍ تحميل الامتداد…</string>
     <string name="ext_overview_title">امتدادات Firefox للكمبيوتر</string>
     <string name="ext_overview_subtitle">أدوات حظر الإعلانات والمطورين</string>
-    <string name="ext_overview_desc">يدعم متصفح Omni امتدادات Firefox للكمبيوتر. يمكنك تثبيت أدوات مثل uBlock Origin مباشرة من لوحة الامتدادات لحظر الإعلانات والمتعقبات.\n\nتتم معالجة جميع الامتدادات محليًا بالكامل على جهازك.</string>
+    <string name="ext_overview_desc">يدعم متصفح NEXA امتدادات Firefox للكمبيوتر. يمكنك تثبيت أدوات مثل uBlock Origin مباشرة من لوحة الامتدادات لحظر الإعلانات والمتعقبات.\n\nتتم معالجة جميع الامتدادات محليًا بالكامل على جهازك.</string>
     <string name="ext_by_author">بواسطة %1$s</string>
     <string name="ext_curated_meta">بواسطة %1$s · ★ %2$s</string>
     <string name="ext_options">خيارات</string>
@@ -713,15 +713,15 @@
     <string name="ext_installed_badge">مثبت</string>
     <string name="ext_install_button">تثبيت</string>
     <string name="ext_menu_cd">الامتدادات</string>
-    <string name="ext_team_author">فريق متصفح Omni</string>
+    <string name="ext_team_author">فريق متصفح NEXA</string>
     <string name="ext_builtin_popup_blocker">حاجب النوافذ المنبثقة</string>
     <string name="ext_builtin_popup_blocker_desc">يحظر علامات التبويب الإعلانية المنبثقة تلقائيًا والنوافذ المنبثقة والنوافز التي يحقنها البرنامج النصي.</string>
     <string name="ext_builtin_universal_copy">نسخ شامل</string>
     <string name="ext_builtin_universal_copy_desc">تجاوز قيود الموقع لتمكين تحديد النص والنسخ بالقوة.</string>
     <string name="ext_builtin_media_sniffer">كاشف الوسائط</string>
     <string name="ext_builtin_media_sniffer_desc">الشم والتقاط شرائح HLS/DASH الديناميكية وجداول البث بدون اتصال.</string>
-    <string name="ext_builtin_omni_translate">Omni Translate</string>
-    <string name="ext_builtin_omni_translate_desc">الترجمة على الجهاز لصفحات الويب</string>
+    <string name="ext_builtin_nexa_translate">NEXA Translate</string>
+    <string name="ext_builtin_nexa_translate_desc">الترجمة على الجهاز لصفحات الويب</string>
     <string name="offline_ai_settings_title">الذكاء الاصطناعي دون اتصال</string>
     <string name="offline_ai_settings_desc">ترجمة وترجمة فورية على الجهاز — تنزيل النماذج، بدون سحابة</string>
     <string name="ext_builtin_ai_blocker">حاجب الذكاء الاصطناعي</string>
@@ -738,7 +738,7 @@
     <string name="wallpaper_dim_label">خفت الخلفية</string>
     <string name="wallpaper_blur_label">ضبابية الخلفية</string>
     <string name="shortcut_shape_helper">اختر شكل أيقونات الاختصارات</string>
-    <string name="show_logo_desc">عرض شعار Omni في الأعلى</string>
+    <string name="show_logo_desc">عرض شعار NEXA في الأعلى</string>
     <string name="show_shortcuts_desc">روابط مواقع الوصول السريع والاختصارات المدمجة</string>
     <string name="privacy_stats_widget">أداة إحصائيات الخصوصية</string>
     <string name="privacy_stats_widget_desc">عرض بطاقة المتعقبات المحظورة والبيانات المحفوظة</string>
@@ -882,7 +882,7 @@
     <string name="qr_gallery">صورة من المعرض</string>
     <string name="qr_scan_another">مسح رمز آخر</string>
     <string name="qr_scan_code">مسح الرمز</string>
-    <string name="qr_secured_by">مؤمَّن بواسطة ماسح Omni QR</string>
+    <string name="qr_secured_by">مؤمَّن بواسطة ماسح NEXA QR</string>
     <string name="qr_detected">تم اكتشاف رمز QR</string>
     <string name="qr_found_codes">تم العثور على %1$d رمز (%2$d/%3$d)</string>
     <string name="qr_copied_clipboard">تم النسخ إلى الحافظة</string>
@@ -1068,10 +1068,10 @@
     <!-- Download Sheet -->
     <string name="download_sheet_mp3">MP3</string>
     <string name="download_toast_external">Opening external download manager...</string>
-    <string name="download_toast_no_handoff">This media needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_no_handoff">This media needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_started">Download started...</string>
     <string name="download_toast_locker">Downloading to Locker...</string>
-    <string name="download_toast_mp3_no_handoff">MP3 extraction needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_mp3_no_handoff">MP3 extraction needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_mp3_started">Downloading as MP3...</string>
     <string name="download_destination_local">Download Locally</string>
     <string name="download_destination_vault">Save to Private Vault 🔒</string>
@@ -1079,12 +1079,12 @@
     <!-- Manga Download Toasts -->
     <string name="manga_toast_starting">⏳ Starting download (%1$s to %2$s)...</string>
     <string name="manga_toast_pdf_vault">🔒 Saved Manga PDF (%1$d pages) to Private Vault</string>
-    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/NEXABrowser/%2$s</string>
     <string name="manga_toast_pdf_failed">Failed to compile PDF: %1$s</string>
     <string name="manga_mode_pdf">PDF document</string>
     <string name="manga_mode_images">%1$d images</string>
     <string name="manga_toast_images_vault">🔒 Saved %1$d images to Private Vault</string>
-    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/NEXABrowser/%2$s</string>
 
 
     <!-- Download Sheet -->
@@ -1289,8 +1289,8 @@
     <string name="browser_clear_console">Clear Console</string>
     <string name="browser_clear_search">Clear search</string>
     <string name="browser_favicon_cd">Favicon</string>
-    <string name="browser_omni_logo_cd">NEXA Browser Custom Logo</string>
-    <string name="browser_omni_logo_cd2">NEXA Browser Logo</string>
+    <string name="browser_nexa_logo_cd">NEXA Browser Custom Logo</string>
+    <string name="browser_nexa_logo_cd2">NEXA Browser Logo</string>
     <string name="browser_reload_cd">Reload</string>
     <string name="address_bar_history">History</string>
     <string name="address_bar_clear_browsing_data">Clear Browsing Data</string>
@@ -1651,7 +1651,7 @@
     <string name="download_settings_desc">Default downloader, preferences, and download rules</string>
     <string name="default_downloader_title">Default Downloader</string>
     <string name="default_downloader_desc">Choose default engine or app for file downloads</string>
-    <string name="downloader_internal">Omni Downloader (Built-in)</string>
+    <string name="downloader_internal">NEXA Downloader (Built-in)</string>
     <string name="downloader_internal_desc">Fast internal engine with video sniffer and vault support</string>
     <string name="downloader_system">Android System Downloader</string>
     <string name="downloader_system_desc">Native OS DownloadManager service</string>
@@ -1727,7 +1727,7 @@
     <string name="download_copy_url">Copy download link</string>
     <string name="autofill_provider_title">Autofill provider</string>
     <string name="autofill_provider_system">Android system (Bitwarden, etc.)</string>
-    <string name="autofill_provider_omni">Omni password vault</string>
+    <string name="autofill_provider_nexa">NEXA password vault</string>
     <string name="autofill_provider_both">Both</string>
     <string name="extension_download_policy_title">Extension downloads</string>
     <string name="extension_download_policy_ask">Ask every time</string>
@@ -1736,7 +1736,7 @@
     <string name="show_recents">إظهار الأحدث</string>
     <string name="show_recents_desc">عرض المواقع التي تمت زيارتها مؤخراً على الشاشة الرئيسية</string>
 
-    <string name="sync_title">Omni Sync</string>
+    <string name="sync_title">NEXA Sync</string>
     <string name="sync_subtitle">مزامنة سحابية ومباشرة متعددة الأجهزة</string>
     <string name="sync_fxa_title">مزامنة حساب Firefox</string>
     <string name="sync_fxa_subtitle">Mozilla Cloud Sync</string>
@@ -1751,10 +1751,10 @@
     <string name="sync_fxa_desc">سجّل الدخول بحساب Firefox لمزامنة الإشارات المرجعية، وعلامات التبويب المفتوحة من الحاسوب، والسجل وكلمات المرور تلقائياً عبر Mozilla Cloud.</string>
     <string name="sync_fxa_complete_toast">اكتملت مزامنة Firefox السحابية!</string>
     <string name="sync_fxa_signed_out_toast">تم تسجيل الخروج من حساب Firefox</string>
-    <string name="sync_mesh_title">Omni Sync Mesh (بدون إنترنت / LAN)</string>
+    <string name="sync_mesh_title">NEXA Sync Mesh (بدون إنترنت / LAN)</string>
     <string name="sync_mesh_subtitle">بدون سحابة · تشفير 100% E2EE (قريباً)</string>
     <string name="sync_mesh_upcoming_badge">ميزة قادمة — مرحلة الاختبار</string>
-    <string name="sync_mesh_upcoming_desc">شبكة Omni Sync Mesh في مرحلة الاختبار. تتطلب تثبيت ملحق Omni Sync (Testing) على متصفح الحاسوب.</string>
+    <string name="sync_mesh_upcoming_desc">شبكة NEXA Sync Mesh في مرحلة الاختبار. تتطلب تثبيت ملحق NEXA Sync (Testing) على متصفح الحاسوب.</string>
     <string name="sync_mesh_desc">مزامنة مباشرة للإشارات وعلامات التبويب المفتوحة والسجل والإعدادات بين الأجهزة عبر Wi-Fi المحلي بدون خوادم مركزية.</string>
     <string name="sync_pair_device">ربط جهاز</string>
     <string name="sync_sync_p2p">مزامنة P2P</string>
@@ -1766,7 +1766,7 @@
     <string name="sync_outbox_journal">سجل الصادر</string>
     <string name="sync_pending_mutations">%1$d تغييرات معلقة</string>
     <string name="sync_safe_layer_title">طبقة مزامنة آمنة وغير مدمرة</string>
-    <string name="sync_safe_layer_desc">بيانات المتصفح الحالية محمية تماماً ولا يتم استبدالها أبداً. يعمل Omni Sync داخل طبقة مشفرة ومعزولة.</string>
+    <string name="sync_safe_layer_desc">بيانات المتصفح الحالية محمية تماماً ولا يتم استبدالها أبداً. يعمل NEXA Sync داخل طبقة مشفرة ومعزولة.</string>
     <string name="sync_section_actions">مركز الاستيراد والتصدير</string>
     <string name="sync_btn_from_pc">من الحاسوب</string>
     <string name="sync_btn_to_pc">إلى الحاسوب</string>
@@ -1800,11 +1800,11 @@
     <string name="sync_guarantee_settings_title">قائمة الإعدادات المحمولة</string>
     <string name="sync_guarantee_settings_desc">مزامنة محركات البحث وقواعد الحظر مع عزل إعدادات الأجهزة.</string>
     <string name="sync_section_browsers">متصفحات الحاسوب المدعومة (ملحق تجريبي)</string>
-    <string name="sync_browsers_desc">تتطلب المزامنة المباشرة تثبيت ملحق Omni Sync (Testing) على المتصفح:</string>
+    <string name="sync_browsers_desc">تتطلب المزامنة المباشرة تثبيت ملحق NEXA Sync (Testing) على المتصفح:</string>
     <string name="sync_section_paired_devices">الأجهزة المرتبطة (%1$d)</string>
     <string name="sync_no_paired_devices">"لا توجد أجهزة مرتبطة بعد. اضغط على 'ربط جهاز' لإنشاء أو مسح رمز QR."</string>
     <string name="sync_pair_dialog_title">ربط جهاز</string>
-    <string name="sync_pair_dialog_extension_req">يتطلب تثبيت ملحق Omni Sync (Testing) على متصفح الحاسوب.</string>
+    <string name="sync_pair_dialog_extension_req">يتطلب تثبيت ملحق NEXA Sync (Testing) على متصفح الحاسوب.</string>
     <string name="sync_scan_desktop_qr">مسح رمز QR للحاسوب</string>
     <string name="sync_share_invitation_code">أو شارك رمز الدعوة هذا مع حاسوبك:</string>
     <string name="sync_copy_phone_code">نسخ رمز الربط</string>
@@ -1875,5 +1875,5 @@
     <string name="home_section_privacy">إحصائيات الخصوصية</string>
     <string name="tool_spoof_identity">انتحال الهوية</string>
     <string name="tool_torrent_magnet">تورنت وماغنت</string>
-    <string name="tool_omni_beam">Omni Beam</string>
+    <string name="tool_nexa_beam">NEXA Beam</string>
 </resources>

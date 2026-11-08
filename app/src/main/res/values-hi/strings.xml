@@ -111,8 +111,8 @@
     <string name="update_failed_title">अपडेट जांच विफल रही</string>
     <string name="update_failed_desc">अपडेट सर्वर (%1$s) से कनेक्ट करने में असमर्थ। क्या आप मैन्युअल रूप से Play स्टोर की जांच करना चाहेंगे?</string>
     <string name="update_dialog_open_store">प्ले स्टोर खोलें</string>
-    <string name="support_github">GitHub समर्थन (RebelRoot)</string>
-    <string name="website_omnibrowser">OmniBrowser वेबसाइट</string>
+    <string name="support_github">GitHub समर्थन (DEVILNIHAD)</string>
+    <string name="website_nexabrowser">NEXABrowser वेबसाइट</string>
     <string name="update_no_update">NEXA Browser अद्यतित है (v%1$s)</string>
     <string name="locker_cat_images">फ़ोटो</string>
     <string name="locker_cat_videos">वीडियो</string>
@@ -390,7 +390,7 @@
     <string name="send_feedback_title">प्रत्यक्ष प्रतिक्रिया भेजें</string>
     <string name="send_feedback_desc">बग रिपोर्ट करें, सुविधाओं का सुझाव दें, विचार साझा करें</string>
     <string name="support_github_desc">स्रोत कोड देखें और समस्याएं दर्ज करें</string>
-    <string name="website_omnibrowser_desc">आधिकारिक ओम्नी ब्राउज़र वेबसाइट पर जाएं</string>
+    <string name="website_nexabrowser_desc">आधिकारिक ओम्नी ब्राउज़र वेबसाइट पर जाएं</string>
     <string name="privacy_policy_desc">हमारी गोपनीयता नीति पढ़ें</string>
     <string name="appearance_address_bar">एड्रेस बार</string>
     <string name="appearance_top">ऊपर</string>
@@ -721,8 +721,8 @@
     <string name="ext_builtin_universal_copy_desc">वेबसाइट प्रतिबंधों को बायपास करके टेक्स्ट चयन और कॉपी करने को मजबूर करें।</string>
     <string name="ext_builtin_media_sniffer">मीडिया स्निफर</string>
     <string name="ext_builtin_media_sniffer_desc">ऑफलाइन गतिशील HLS/DASH सेगमेंट और स्ट्रीम को सूंघें और कैप्चर करें।</string>
-    <string name="ext_builtin_omni_translate">Omni Translate</string>
-    <string name="ext_builtin_omni_translate_desc">वेबपेजों का ऑन-डिवाइस अनुवाद</string>
+    <string name="ext_builtin_nexa_translate">NEXA Translate</string>
+    <string name="ext_builtin_nexa_translate_desc">वेबपेजों का ऑन-डिवाइस अनुवाद</string>
     <string name="offline_ai_settings_title">ऑफ़लाइन AI</string>
     <string name="offline_ai_settings_desc">डिवाइस पर अनुवाद और कैप्शन — मॉडल डाउनलोड करें, कोई क्लाउड नहीं</string>
     <string name="ext_builtin_ai_blocker">AI ब्लॉकर</string>
@@ -739,7 +739,7 @@
     <string name="wallpaper_dim_label">वॉलपेपर डिम</string>
     <string name="wallpaper_blur_label">वॉलपेपर ब्लर</string>
     <string name="shortcut_shape_helper">अपने शॉर्टकट आइकन का आकार चुनें</string>
-    <string name="show_logo_desc">शीर्ष पर Omni ब्रांड लोगो प्रदर्शित करें</string>
+    <string name="show_logo_desc">शीर्ष पर NEXA ब्रांड लोगो प्रदर्शित करें</string>
     <string name="show_shortcuts_desc">त्वरित एक्सेस साइट लिंक और बिल्ट-इन शॉर्टकट</string>
     <string name="privacy_stats_widget">प्राइवेसी स्टैट्स विजेट</string>
     <string name="privacy_stats_widget_desc">ब्लॉक किए गए ट्रैकर्स और सेव किए गए डेटा कार्ड दिखाएं</string>
@@ -884,7 +884,7 @@
     <string name="qr_gallery">गैलरी चित्र</string>
     <string name="qr_scan_another">एक और कोड स्कैन करें</string>
     <string name="qr_scan_code">कोड स्कैन करें</string>
-    <string name="qr_secured_by">Omni QR स्कैनर द्वारा सुरक्षित</string>
+    <string name="qr_secured_by">NEXA QR स्कैनर द्वारा सुरक्षित</string>
     <string name="qr_detected">QR कोड पहचाना गया</string>
     <string name="qr_found_codes">%1$d कोड मिले (%2$d/%3$d)</string>
     <string name="qr_copied_clipboard">क्लिपबोर्ड पर कॉपी किया</string>
@@ -1070,10 +1070,10 @@
     <!-- Download Sheet -->
     <string name="download_sheet_mp3">MP3</string>
     <string name="download_toast_external">Opening external download manager...</string>
-    <string name="download_toast_no_handoff">This media needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_no_handoff">This media needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_started">Download started...</string>
     <string name="download_toast_locker">Downloading to Locker...</string>
-    <string name="download_toast_mp3_no_handoff">MP3 extraction needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_mp3_no_handoff">MP3 extraction needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_mp3_started">Downloading as MP3...</string>
     <string name="download_destination_local">Download Locally</string>
     <string name="download_destination_vault">Save to Private Vault 🔒</string>
@@ -1081,12 +1081,12 @@
     <!-- Manga Download Toasts -->
     <string name="manga_toast_starting">⏳ Starting download (%1$s to %2$s)...</string>
     <string name="manga_toast_pdf_vault">🔒 Saved Manga PDF (%1$d pages) to Private Vault</string>
-    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/NEXABrowser/%2$s</string>
     <string name="manga_toast_pdf_failed">Failed to compile PDF: %1$s</string>
     <string name="manga_mode_pdf">PDF document</string>
     <string name="manga_mode_images">%1$d images</string>
     <string name="manga_toast_images_vault">🔒 Saved %1$d images to Private Vault</string>
-    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/NEXABrowser/%2$s</string>
 
 
     <!-- Download Sheet -->
@@ -1290,8 +1290,8 @@
     <string name="browser_clear_console">Clear Console</string>
     <string name="browser_clear_search">Clear search</string>
     <string name="browser_favicon_cd">Favicon</string>
-    <string name="browser_omni_logo_cd">NEXA Browser Custom Logo</string>
-    <string name="browser_omni_logo_cd2">NEXA Browser Logo</string>
+    <string name="browser_nexa_logo_cd">NEXA Browser Custom Logo</string>
+    <string name="browser_nexa_logo_cd2">NEXA Browser Logo</string>
     <string name="browser_reload_cd">Reload</string>
     <string name="address_bar_history">History</string>
     <string name="address_bar_clear_browsing_data">Clear Browsing Data</string>
@@ -1652,7 +1652,7 @@
     <string name="download_settings_desc">Default downloader, preferences, and download rules</string>
     <string name="default_downloader_title">Default Downloader</string>
     <string name="default_downloader_desc">Choose default engine or app for file downloads</string>
-    <string name="downloader_internal">Omni Downloader (Built-in)</string>
+    <string name="downloader_internal">NEXA Downloader (Built-in)</string>
     <string name="downloader_internal_desc">Fast internal engine with video sniffer and vault support</string>
     <string name="downloader_system">Android System Downloader</string>
     <string name="downloader_system_desc">Native OS DownloadManager service</string>
@@ -1728,7 +1728,7 @@
     <string name="download_copy_url">Copy download link</string>
     <string name="autofill_provider_title">Autofill provider</string>
     <string name="autofill_provider_system">Android system (Bitwarden, etc.)</string>
-    <string name="autofill_provider_omni">Omni password vault</string>
+    <string name="autofill_provider_nexa">NEXA password vault</string>
     <string name="autofill_provider_both">Both</string>
     <string name="extension_download_policy_title">Extension downloads</string>
     <string name="extension_download_policy_ask">Ask every time</string>
@@ -1737,7 +1737,7 @@
     <string name="show_recents">हाल ही में विज़िट किए गए दिखाएं</string>
     <string name="show_recents_desc">होम स्क्रीन पर हाल ही में विज़िट की गई साइटें दिखाएं</string>
 
-    <string name="sync_title">Omni Sync</string>
+    <string name="sync_title">NEXA Sync</string>
     <string name="sync_subtitle">क्लाउड और P2P मल्टी-डिवाइस सिंक</string>
     <string name="sync_fxa_title">Firefox खाता सिंक</string>
     <string name="sync_fxa_subtitle">Mozilla Cloud Sync</string>
@@ -1752,10 +1752,10 @@
     <string name="sync_fxa_desc">Mozilla Cloud के माध्यम से अपने PC/Mac से बुकमार्क, खुले टैब, ब्राउज़िंग इतिहास और पासवर्ड को स्वचालित रूप से सिंक करने के लिए अपने Firefox खाते से साइन इन करें।</string>
     <string name="sync_fxa_complete_toast">Firefox क्लाउड सिंक पूरा हुआ!</string>
     <string name="sync_fxa_signed_out_toast">Firefox खाते से साइन आउट किया गया</string>
-    <string name="sync_mesh_title">Omni Sync Mesh (ऑफ़लाइन / LAN)</string>
+    <string name="sync_mesh_title">NEXA Sync Mesh (ऑफ़लाइन / LAN)</string>
     <string name="sync_mesh_subtitle">शून्य-क्लाउड · 100% E2EE P2P (जल्द आ रहा है)</string>
     <string name="sync_mesh_upcoming_badge">आगामी सुविधा — परीक्षण चरण</string>
-    <string name="sync_mesh_upcoming_desc">Omni Sync Mesh वर्तमान में परीक्षण चरण में है। इसके लिए आपके डेस्कटॉप ब्राउज़र पर Omni Sync Extension (Testing) इंस्टॉल करना आवश्यक है।</string>
+    <string name="sync_mesh_upcoming_desc">NEXA Sync Mesh वर्तमान में परीक्षण चरण में है। इसके लिए आपके डेस्कटॉप ब्राउज़र पर NEXA Sync Extension (Testing) इंस्टॉल करना आवश्यक है।</string>
     <string name="sync_mesh_desc">केंद्रीय सर्वर के बिना स्थानीय वाई-फ़ाई पर बुकमार्क, खुले टैब, इतिहास और प्राथमिकताओं को सीधे पीयर-टू-पीयर सिंक करें।</string>
     <string name="sync_pair_device">डिवाइस जोड़ें</string>
     <string name="sync_sync_p2p">P2P सिंक</string>
@@ -1767,7 +1767,7 @@
     <string name="sync_outbox_journal">आउटबॉक्स जर्नल</string>
     <string name="sync_pending_mutations">%1$d लंबित म्यूटेशन</string>
     <string name="sync_safe_layer_title">सुरक्षित गैर-विनाशकारी सिंक परत</string>
-    <string name="sync_safe_layer_desc">मौजूदा ब्राउज़र डेटा कभी भी अधिलेखित नहीं होता है। Omni Sync एक अलग, एन्क्रिप्टेड परत में संचालित होता है।</string>
+    <string name="sync_safe_layer_desc">मौजूदा ब्राउज़र डेटा कभी भी अधिलेखित नहीं होता है। NEXA Sync एक अलग, एन्क्रिप्टेड परत में संचालित होता है।</string>
     <string name="sync_section_actions">आयात और निर्यात हब</string>
     <string name="sync_btn_from_pc">PC से</string>
     <string name="sync_btn_to_pc">PC में</string>
@@ -1801,11 +1801,11 @@
     <string name="sync_guarantee_settings_title">पोर्टेबल सेटिंग्स सूची</string>
     <string name="sync_guarantee_settings_desc">हार्डवेयर सेटिंग्स को अलग रखते हुए सर्च इंजन और एडब्लॉकर नियमों को सिंक करता है।</string>
     <string name="sync_section_browsers">समर्थित डेस्कटॉप ब्राउज़र (परीक्षण एक्सटेंशन)</string>
-    <string name="sync_browsers_desc">प्रत्यक्ष P2P सिंक के लिए आपके ब्राउज़र पर Omni Sync Extension (Testing) आवश्यक है:</string>
+    <string name="sync_browsers_desc">प्रत्यक्ष P2P सिंक के लिए आपके ब्राउज़र पर NEXA Sync Extension (Testing) आवश्यक है:</string>
     <string name="sync_section_paired_devices">जुड़े हुए डिवाइस (%1$d)</string>
     <string name="sync_no_paired_devices">"अभी तक कोई डिवाइस नहीं जुड़ा है। QR कोड बनाने या स्कैन करने के लिए 'डिवाइस जोड़ें' पर टैप करें।"</string>
     <string name="sync_pair_dialog_title">डिवाइस जोड़ें</string>
-    <string name="sync_pair_dialog_extension_req">डेस्कटॉप ब्राउज़र पर Omni Sync Extension (Testing) इंस्टॉल होना आवश्यक है।</string>
+    <string name="sync_pair_dialog_extension_req">डेस्कटॉप ब्राउज़र पर NEXA Sync Extension (Testing) इंस्टॉल होना आवश्यक है।</string>
     <string name="sync_scan_desktop_qr">डेस्कटॉप QR कोड स्कैन करें</string>
     <string name="sync_share_invitation_code">या यह इनविटेशन कोड अपने PC पर साझा करें:</string>
     <string name="sync_copy_phone_code">फ़ोन पेयरिंग कोड कॉपी करें</string>
@@ -1876,5 +1876,5 @@
     <string name="home_section_privacy">प्राइवेसी आंकड़े</string>
     <string name="tool_spoof_identity">पहचान छल</string>
     <string name="tool_torrent_magnet">टोरेंट और मैग्नेट</string>
-    <string name="tool_omni_beam">Omni Beam</string>
+    <string name="tool_nexa_beam">NEXA Beam</string>
 </resources>

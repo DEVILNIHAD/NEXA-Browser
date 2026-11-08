@@ -121,7 +121,7 @@ function reportToNative(url, mimeType, tabId, sizeBytes) {
         }
 
         try {
-            chrome.runtime.sendNativeMessage('omniApp', {
+            chrome.runtime.sendNativeMessage('nexaApp', {
                 type: 'MEDIA_GRABBED',
                 url: url,
                 mimeType: mimeType || 'video/mp4',
@@ -210,7 +210,7 @@ function broadcastStateToTabs() {
             for (const tab of tabs) {
                 try {
                     chrome.tabs.sendMessage(tab.id, {
-                        type: 'OMNI_SET_NATIVE_PLAYER',
+                        type: 'NEXA_SET_NATIVE_PLAYER',
                         enabled: nativePlayerEnabled,
                         youtubeEnabled: youtubeEnabled
                     });
@@ -222,7 +222,7 @@ function broadcastStateToTabs() {
 
 function pollNativeSettings() {
     try {
-        chrome.runtime.sendNativeMessage('omniApp', { type: 'GET_NATIVE_PLAYER_STATE' })
+        chrome.runtime.sendNativeMessage('nexaApp', { type: 'GET_NATIVE_PLAYER_STATE' })
             .then((rawResponse) => {
                 const response = typeof rawResponse === 'string' ? JSON.parse(rawResponse) : rawResponse;
                 if (response && response.hasOwnProperty('enabled')) {
@@ -286,7 +286,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             handoffObj.pageUrl = pageUrl || handoffObj.pageUrl || '';
 
             try {
-                chrome.runtime.sendNativeMessage('omniApp', {
+                chrome.runtime.sendNativeMessage('nexaApp', {
                     type: 'REQUEST_HANDOFF',
                     url: url,
                     pageUrl: pageUrl,
@@ -324,7 +324,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         const sendDownload = (cookiesStr) => {
             try {
-                chrome.runtime.sendNativeMessage('omniApp', {
+                chrome.runtime.sendNativeMessage('nexaApp', {
                     type: 'REQUEST_DOWNLOAD',
                     url: url,
                     pageUrl: pageUrl,
@@ -368,7 +368,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 if (cookiesList && cookiesList.length > 0) {
                     cookiesStr = cookiesList.map(c => `${c.name}=${c.value}`).join('; ');
                 }
-                chrome.runtime.sendNativeMessage('omniApp', {
+                chrome.runtime.sendNativeMessage('nexaApp', {
                     type: 'SITE_DOWNLOAD_REQUEST',
                     url: url,
                     pageUrl: pageUrl,
@@ -385,7 +385,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
     } else if (message.type === 'HANDOFF_RESTORED') {
         try {
-            chrome.runtime.sendNativeMessage('omniApp', {
+            chrome.runtime.sendNativeMessage('nexaApp', {
                 type: 'HANDOFF_RESTORED',
                 sessionId: message.sessionId,
                 videoId: message.videoId,
@@ -402,14 +402,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
     } else if (message.type === 'VIDEO_STATE_CHANGE') {
         try {
-            chrome.runtime.sendNativeMessage('omniApp', {
+            chrome.runtime.sendNativeMessage('nexaApp', {
                 type: 'VIDEO_STATE_CHANGE',
                 isPlaying: message.isPlaying
             }).catch(() => {});
         } catch (e) {}
     } else if (message.type === 'INNER_SCROLL_STATE') {
         try {
-            chrome.runtime.sendNativeMessage('omniApp', {
+            chrome.runtime.sendNativeMessage('nexaApp', {
                 type: 'INNER_SCROLL_STATE',
                 isScrolled: message.isScrolled
             }).catch(() => {});
@@ -417,7 +417,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.type === 'PLAY_IN_NATIVE') {
         const sendPlayInNative = (cookieString) => {
             try {
-                chrome.runtime.sendNativeMessage('omniApp', {
+                chrome.runtime.sendNativeMessage('nexaApp', {
                     type: 'PLAY_IN_NATIVE',
                     url: message.url,
                     pageUrl: message.pageUrl,
@@ -441,7 +441,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
     } else if (message.type === 'CONSOLE_LOG') {
         try {
-            chrome.runtime.sendNativeMessage('omniApp', {
+            chrome.runtime.sendNativeMessage('nexaApp', {
                 type: 'CONSOLE_LOG',
                 level: message.level,
                 message: message.message
@@ -449,7 +449,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         } catch (e) {}
     } else if (message.type === 'FOCUS_LOGIN_INPUT') {
         try {
-            chrome.runtime.sendNativeMessage('omniApp', {
+            chrome.runtime.sendNativeMessage('nexaApp', {
                 type: 'FOCUS_LOGIN_INPUT',
                 url: sender.tab ? sender.tab.url : ''
             }).catch(() => {});

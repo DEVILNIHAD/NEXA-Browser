@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Omni 浏览器</string>
+    <string name="app_name">NEXA 浏览器</string>
     <string name="settings_title">设置</string>
     <string name="back_desc">返回</string>
     <string name="general_section">通用</string>
@@ -14,7 +14,7 @@
     <string name="private_browsing_title">无痕浏览</string>
     <string name="private_browsing_desc">阻止跟踪器和 Cookie</string>
     <string name="native_player_title">原生视频播放器</string>
-    <string name="native_player_desc">在 Omni 播放器中打开视频并支持下载</string>
+    <string name="native_player_desc">在 NEXA 播放器中打开视频并支持下载</string>
     <string name="ai_blocker_title">AI 拦截器</string>
     <string name="ai_blocker_desc">完全拦截生成式搜索摘要</string>
     <string name="default_browser_title">默认浏览器</string>
@@ -107,13 +107,13 @@
     <string name="update_dialog_later">稍后</string>
     <string name="update_dialog_btn">更新</string>
     <string name="update_dialog_title">有可用更新</string>
-    <string name="update_dialog_desc">Play 商店中已有新版本 (%1$s) 的 Omni 浏览器。您要现在更新吗？</string>
+    <string name="update_dialog_desc">Play 商店中已有新版本 (%1$s) 的 NEXA 浏览器。您要现在更新吗？</string>
     <string name="update_failed_title">更新检查失败</string>
     <string name="update_failed_desc">无法连接到更新服务器 (%1$s)。您想手动检查 Play 商店吗？</string>
     <string name="update_dialog_open_store">打开 Play 商店</string>
-    <string name="support_github">GitHub 支持 (RebelRoot)</string>
-    <string name="website_omnibrowser">OmniBrowser 网站</string>
-    <string name="update_no_update">Omni 浏览器已是最新版本 (v%1$s)</string>
+    <string name="support_github">GitHub 支持 (DEVILNIHAD)</string>
+    <string name="website_nexabrowser">NEXABrowser 网站</string>
+    <string name="update_no_update">NEXA 浏览器已是最新版本 (v%1$s)</string>
     <string name="locker_cat_images">图片</string>
     <string name="locker_cat_videos">视频</string>
     <string name="locker_cat_docs">文档</string>
@@ -286,7 +286,7 @@
     <string name="home_recently_visited">最近访问</string>
     <string name="home_see_all">查看全部</string>
     <string name="home_more">更多</string>
-    <string name="home_shield_active">Omni 拦截保护已激活</string>
+    <string name="home_shield_active">NEXA 拦截保护已激活</string>
     <string name="home_view_report">查看隐私报告</string>
     <string name="home_view_report_short">查看报告</string>
     <string name="privacy_report_title">隐私报告</string>
@@ -309,7 +309,7 @@
     <string name="privacy_cat_retargeting">广告与重定向</string>
     <string name="privacy_cat_market_research">市场调研与分析</string>
     <string name="privacy_report_intelligent_tracking">智能追踪拦截</string>
-    <string name="privacy_report_banner_desc">Omni 智能追踪防护可防止追踪器分析您的网络活动并在跨网站间收集数据。</string>
+    <string name="privacy_report_banner_desc">NEXA 智能追踪防护可防止追踪器分析您的网络活动并在跨网站间收集数据。</string>
     <string name="privacy_report_trackers_prevented">已阻止的追踪器</string>
     <string name="privacy_report_est_data_saved">预估已节省流量</string>
     <string name="privacy_report_faster_page_load">页面加载更快</string>
@@ -390,7 +390,7 @@
     <string name="send_feedback_title">发送直接反馈</string>
     <string name="send_feedback_desc">报告错误、建议新功能、分享想法</string>
     <string name="support_github_desc">查看源代码并提交问题</string>
-    <string name="website_omnibrowser_desc">访问 NEXA Browser 官方网站</string>
+    <string name="website_nexabrowser_desc">访问 NEXA Browser 官方网站</string>
     <string name="privacy_policy_desc">阅读我们的隐私政策</string>
     <string name="appearance_address_bar">地址栏</string>
     <string name="appearance_top">顶部</string>
@@ -569,7 +569,7 @@
     <string name="onboarding_nav_bottom">3. 底部</string>
     <string name="onboarding_active_layout">当前: %1$s 布局</string>
     <string name="onboarding_layout_toast">布局已设置为 %1$s</string>
-    <string name="onboarding_title_default_browser">将 Omni 设置为\n默认浏览器</string>
+    <string name="onboarding_title_default_browser">将 NEXA 设置为\n默认浏览器</string>
     <string name="onboarding_tagline_default_browser">每天保持快速、私密与安全</string>
     <string name="onboarding_feature_auto_protection_title">自动保护</string>
     <string name="onboarding_feature_auto_protection_desc">在所有链接上拦截追踪脚本、弹窗和有害广告</string>
@@ -577,8 +577,8 @@
     <string name="onboarding_feature_lightning_desc">即时页面渲染，无后台遥测减速</string>
     <string name="onboarding_feature_encrypted_title">加密与安全</string>
     <string name="onboarding_feature_encrypted_desc">生物识别保护与全站自动 HTTPS 加密</string>
-    <string name="onboarding_default_card_title">将 Omni 设为默认浏览器</string>
-    <string name="onboarding_default_card_desc">打开系统设置选择 Omni 作为默认浏览器</string>
+    <string name="onboarding_default_card_title">将 NEXA 设为默认浏览器</string>
+    <string name="onboarding_default_card_desc">打开系统设置选择 NEXA 作为默认浏览器</string>
     <string name="onboarding_set_default_button">设置为默认浏览器</string>
     <string name="menu_incognito">无痕</string>
     <string name="menu_group">分组</string>
@@ -720,8 +720,8 @@
     <string name="ext_builtin_universal_copy_desc">绕过网站限制，强制启用文本选择和复制。</string>
     <string name="ext_builtin_media_sniffer">媒体嗅探器</string>
     <string name="ext_builtin_media_sniffer_desc">嗅探并捕获离线动态 HLS/DASH 片段和流。</string>
-    <string name="ext_builtin_omni_translate">Omni Translate</string>
-    <string name="ext_builtin_omni_translate_desc">网页设备端翻译</string>
+    <string name="ext_builtin_nexa_translate">NEXA Translate</string>
+    <string name="ext_builtin_nexa_translate_desc">网页设备端翻译</string>
     <string name="offline_ai_settings_title">离线 AI</string>
     <string name="offline_ai_settings_desc">设备端翻译和字幕 — 下载模型，无需云端</string>
     <string name="ext_builtin_ai_blocker">AI 拦截器</string>
@@ -738,7 +738,7 @@
     <string name="wallpaper_dim_label">壁纸暗度</string>
     <string name="wallpaper_blur_label">壁纸模糊</string>
     <string name="shortcut_shape_helper">选择快捷方式图标的形状</string>
-    <string name="show_logo_desc">在顶部显示 Omni 品牌标志</string>
+    <string name="show_logo_desc">在顶部显示 NEXA 品牌标志</string>
     <string name="show_shortcuts_desc">快速访问网站链接和内置快捷方式</string>
     <string name="privacy_stats_widget">隐私统计小组件</string>
     <string name="privacy_stats_widget_desc">显示已拦截跟踪器和已节省数据卡片</string>
@@ -882,7 +882,7 @@
     <string name="qr_gallery">相册图片</string>
     <string name="qr_scan_another">扫描另一个码</string>
     <string name="qr_scan_code">扫码</string>
-    <string name="qr_secured_by">由 Omni 二维码扫描保护</string>
+    <string name="qr_secured_by">由 NEXA 二维码扫描保护</string>
     <string name="qr_detected">检测到二维码</string>
     <string name="qr_found_codes">找到 %1$d 个码 (%2$d/%3$d)</string>
     <string name="qr_copied_clipboard">已复制到剪贴板</string>
@@ -1068,10 +1068,10 @@
     <!-- Download Sheet -->
     <string name="download_sheet_mp3">MP3</string>
     <string name="download_toast_external">Opening external download manager...</string>
-    <string name="download_toast_no_handoff">This media needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_no_handoff">This media needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_started">Download started...</string>
     <string name="download_toast_locker">Downloading to Locker...</string>
-    <string name="download_toast_mp3_no_handoff">MP3 extraction needs Omni\'s built-in downloader -- handing off isn\'t supported</string>
+    <string name="download_toast_mp3_no_handoff">MP3 extraction needs NEXA\'s built-in downloader -- handing off isn\'t supported</string>
     <string name="download_toast_mp3_started">Downloading as MP3...</string>
     <string name="download_destination_local">Download Locally</string>
     <string name="download_destination_vault">Save to Private Vault 🔒</string>
@@ -1079,12 +1079,12 @@
     <!-- Manga Download Toasts -->
     <string name="manga_toast_starting">⏳ Starting download (%1$s to %2$s)...</string>
     <string name="manga_toast_pdf_vault">🔒 Saved Manga PDF (%1$d pages) to Private Vault</string>
-    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_pdf_downloads">📄 Saved Manga PDF (%1$d pages) to Downloads/NEXABrowser/%2$s</string>
     <string name="manga_toast_pdf_failed">Failed to compile PDF: %1$s</string>
     <string name="manga_mode_pdf">PDF document</string>
     <string name="manga_mode_images">%1$d images</string>
     <string name="manga_toast_images_vault">🔒 Saved %1$d images to Private Vault</string>
-    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/OmniBrowser/%2$s</string>
+    <string name="manga_toast_images_downloads">✅ Downloaded %1$d images to Downloads/NEXABrowser/%2$s</string>
 
 
     <!-- Download Sheet -->
@@ -1289,8 +1289,8 @@
     <string name="browser_clear_console">Clear Console</string>
     <string name="browser_clear_search">Clear search</string>
     <string name="browser_favicon_cd">Favicon</string>
-    <string name="browser_omni_logo_cd">NEXA Browser Custom Logo</string>
-    <string name="browser_omni_logo_cd2">NEXA Browser Logo</string>
+    <string name="browser_nexa_logo_cd">NEXA Browser Custom Logo</string>
+    <string name="browser_nexa_logo_cd2">NEXA Browser Logo</string>
     <string name="browser_reload_cd">Reload</string>
     <string name="address_bar_history">History</string>
     <string name="address_bar_clear_browsing_data">Clear Browsing Data</string>
@@ -1651,7 +1651,7 @@
     <string name="download_settings_desc">Default downloader, preferences, and download rules</string>
     <string name="default_downloader_title">Default Downloader</string>
     <string name="default_downloader_desc">Choose default engine or app for file downloads</string>
-    <string name="downloader_internal">Omni Downloader (Built-in)</string>
+    <string name="downloader_internal">NEXA Downloader (Built-in)</string>
     <string name="downloader_internal_desc">Fast internal engine with video sniffer and vault support</string>
     <string name="downloader_system">Android System Downloader</string>
     <string name="downloader_system_desc">Native OS DownloadManager service</string>
@@ -1727,7 +1727,7 @@
     <string name="download_copy_url">Copy download link</string>
     <string name="autofill_provider_title">Autofill provider</string>
     <string name="autofill_provider_system">Android system (Bitwarden, etc.)</string>
-    <string name="autofill_provider_omni">Omni password vault</string>
+    <string name="autofill_provider_nexa">NEXA password vault</string>
     <string name="autofill_provider_both">Both</string>
     <string name="extension_download_policy_title">Extension downloads</string>
     <string name="extension_download_policy_ask">Ask every time</string>
@@ -1736,7 +1736,7 @@
     <string name="show_recents">显示最近访问</string>
     <string name="show_recents_desc">在主屏幕上显示最近访问的网站</string>
 
-    <string name="sync_title">Omni Sync</string>
+    <string name="sync_title">NEXA Sync</string>
     <string name="sync_subtitle">云端与P2P多设备同步</string>
     <string name="sync_fxa_title">Firefox 账号同步</string>
     <string name="sync_fxa_subtitle">Mozilla Cloud Sync</string>
@@ -1751,10 +1751,10 @@
     <string name="sync_fxa_desc">登录您的 Firefox 账号，通过 Mozilla Cloud 自动同步书签、电脑端打开的标签页、历史记录和密码。</string>
     <string name="sync_fxa_complete_toast">Firefox 云端同步已完成！</string>
     <string name="sync_fxa_signed_out_toast">已退出 Firefox 账号</string>
-    <string name="sync_mesh_title">Omni Sync Mesh (离线 / 局域网)</string>
+    <string name="sync_mesh_title">NEXA Sync Mesh (离线 / 局域网)</string>
     <string name="sync_mesh_subtitle">零云端 · 100% 端到端加密P2P (即将推出)</string>
     <string name="sync_mesh_upcoming_badge">即将推出的功能 — 测试阶段</string>
-    <string name="sync_mesh_upcoming_desc">Omni Sync Mesh 目前处于测试阶段。测试需要在桌面浏览器上安装 Omni Sync Extension (Testing)。</string>
+    <string name="sync_mesh_upcoming_desc">NEXA Sync Mesh 目前处于测试阶段。测试需要在桌面浏览器上安装 NEXA Sync Extension (Testing)。</string>
     <string name="sync_mesh_desc">通过本地 Wi-Fi 在设备间直接对等同步书签、标签页、历史记录和偏好设置，无需中央服务器。</string>
     <string name="sync_pair_device">配对设备</string>
     <string name="sync_sync_p2p">P2P 同步</string>
@@ -1766,7 +1766,7 @@
     <string name="sync_outbox_journal">发件箱日志</string>
     <string name="sync_pending_mutations">%1$d 个待处理变更</string>
     <string name="sync_safe_layer_title">安全非破坏性同步层</string>
-    <string name="sync_safe_layer_desc">现有浏览器书签和数据绝不会被覆盖。Omni Sync 在独立的加密同步层中运行。</string>
+    <string name="sync_safe_layer_desc">现有浏览器书签和数据绝不会被覆盖。NEXA Sync 在独立的加密同步层中运行。</string>
     <string name="sync_section_actions">导入与导出中心</string>
     <string name="sync_btn_from_pc">从电脑</string>
     <string name="sync_btn_to_pc">至电脑</string>
@@ -1800,11 +1800,11 @@
     <string name="sync_guarantee_settings_title">便携式设置白名单</string>
     <string name="sync_guarantee_settings_desc">同步搜索引擎和广告拦截规则，同时隔离特定硬件设置。</string>
     <string name="sync_section_browsers">支持的桌面浏览器 (测试扩展)</string>
-    <string name="sync_browsers_desc">直接 P2P 同步需要在桌面浏览器上安装 Omni Sync Extension (Testing)：</string>
+    <string name="sync_browsers_desc">直接 P2P 同步需要在桌面浏览器上安装 NEXA Sync Extension (Testing)：</string>
     <string name="sync_section_paired_devices">已配对设备 (%1$d)</string>
     <string name="sync_no_paired_devices">尚未配对其他设备。点击“配对设备”以生成或扫描二维码。</string>
     <string name="sync_pair_dialog_title">配对设备</string>
-    <string name="sync_pair_dialog_extension_req">需要在桌面浏览器上安装 Omni Sync Extension (Testing)。</string>
+    <string name="sync_pair_dialog_extension_req">需要在桌面浏览器上安装 NEXA Sync Extension (Testing)。</string>
     <string name="sync_scan_desktop_qr">扫描桌面二维码</string>
     <string name="sync_share_invitation_code">或将此手机邀请码分享至电脑：</string>
     <string name="sync_copy_phone_code">复制手机配对码</string>
@@ -1875,5 +1875,5 @@
     <string name="home_section_privacy">隐私统计</string>
     <string name="tool_spoof_identity">伪装身份</string>
     <string name="tool_torrent_magnet">Torrent 和 Magnet</string>
-    <string name="tool_omni_beam">Omni Beam</string>
+    <string name="tool_nexa_beam">NEXA Beam</string>
 </resources>

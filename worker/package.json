@@ -1,7 +1,7 @@
 {
-  "name": "rebelroot-backend",
+  "name": "devilnihad-backend",
   "version": "1.0.0",
-  "description": "Cloudflare Workers edge API for RebelRoot digital sovereignty suite",
+  "description": "Cloudflare Workers edge API for DEVILNIHAD digital sovereignty suite",
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",

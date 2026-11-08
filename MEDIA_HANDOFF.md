@@ -9,9 +9,9 @@
 
 ## What This Fixes
 
-Before: When a user opened a website video in Omni Player, playback restarted at `0:00` with a new ExoPlayer session, losing the live position.
+Before: When a user opened a website video in NEXA Player, playback restarted at `0:00` with a new ExoPlayer session, losing the live position.
 
-After: Omni captures the live `<video>` element state (position, speed, volume, mute, play/pause) and restores it in the native player.
+After: NEXA captures the live `<video>` element state (position, speed, volume, mute, play/pause) and restores it in the native player.
 
 ---
 
@@ -67,7 +67,7 @@ Seamless playback continues
 
 ```
 1. Live MediaHandoff.currentPositionMs
-2. Persisted Omni position (fallback)
+2. Persisted NEXA position (fallback)
 3. 0L
 ```
 

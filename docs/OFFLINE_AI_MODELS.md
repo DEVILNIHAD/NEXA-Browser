@@ -1,6 +1,6 @@
 # Offline AI Models
 
-Omni does **not** host model weights. Models come from documented upstream hosts
+NEXA does **not** host model weights. Models come from documented upstream hosts
 whose licenses permit redistribution and use. No model is bundled in the APK; the
 application carries only a tiny catalog (`assets/ai/models_catalog.json`) with
 metadata, and downloads + verifies + atomically installs the actual weights into

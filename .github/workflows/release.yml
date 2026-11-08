@@ -87,11 +87,11 @@ jobs:
             file="$1"
             filename=$(basename "$file")
             if [[ "$filename" == app-arm-release.apk ]]; then
-              mv "$file" "app/build/outputs/apk/omni-browser-${VERSION}-arm.apk"
+              mv "$file" "app/build/outputs/apk/nexa-browser-${VERSION}-arm.apk"
             elif [[ "$filename" == app-aarch64-release.apk ]]; then
-              mv "$file" "app/build/outputs/apk/omni-browser-${VERSION}-aarch64.apk"
+              mv "$file" "app/build/outputs/apk/nexa-browser-${VERSION}-aarch64.apk"
             elif [[ "$filename" == app-universal-release.apk ]]; then
-              mv "$file" "app/build/outputs/apk/omni-browser-${VERSION}-universal.apk"
+              mv "$file" "app/build/outputs/apk/nexa-browser-${VERSION}-universal.apk"
             fi
           ' bash {} \;
           echo "✅ APKs renamed:"
@@ -113,7 +113,7 @@ jobs:
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
           generate_release_notes: false
           files: |
-            app/build/outputs/apk/omni-browser-*.apk
+            app/build/outputs/apk/nexa-browser-*.apk
           body: |
             ## NEXA Browser ${{ github.ref_name }}
 
@@ -157,6 +157,6 @@ jobs:
 
             ### 📦 Installation Requirements
             - Android 8.0+ (API 26) is required.
-            - If you are not sure which build to choose, download the **universal** APK (`omni-browser-${{ github.ref_name }}-universal.apk`).
+            - If you are not sure which build to choose, download the **universal** APK (`nexa-browser-${{ github.ref_name }}-universal.apk`).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

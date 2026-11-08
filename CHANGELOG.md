@@ -20,9 +20,9 @@ All notable changes to the NEXA Browser project will be documented in this file.
 
 ### Fixed
 - **Tablet**: web content no longer draws under the toolbar/address bar in landscape; bottom address bar viewport padding now accounted on tablets; toolbar actions collapse deterministically so the URL field never becomes unusably narrow.
-- **Dropdown Menu**: omni menu no longer clips past the bottom of the screen — height respects its anchor position and the card scrolls.
+- **Dropdown Menu**: nexa menu no longer clips past the bottom of the screen — height respects its anchor position and the card scrolls.
 - **Small Screens**: menu sheet and quick tools density reworked (4-column compact grid, tighter labels), home content scrolls clear of the transparent bottom bar, and the adaptive layout self-heals from stale window/density transitions.
-- **App Links** (#113): Omni now asks before opening https app links in native apps.
+- **App Links** (#113): NEXA now asks before opening https app links in native apps.
 - **Text Inputs** (#115): focused text inputs stay above the soft keyboard in web content.
 - **Burn Exit** (#117): GeckoView data purge completes before burn-exit, preventing the corrupt-profile error page.
 - Misc: dropdown `<optgroup>` sub-options, bookmark import, site overlay fixes.
@@ -36,8 +36,8 @@ All notable changes to the NEXA Browser project will be documented in this file.
 
 ### Added
 - **Firefox Account Cloud Sync**: 1-Click login with Firefox Account to synchronize bookmarks, remote tabs from PC/Mac, browsing history, and passwords via official Mozilla Sync 1.5 Cloud.
-- **Remote Tabs Viewer**: Live bottom sheet displaying tabs currently open on paired desktop computers with 1-tap navigation in Omni.
-- **Omni Sync Mesh (Upcoming / Testing Phase)**: End-to-end encrypted zero-cloud P2P Wi-Fi synchronization for local devices, designed for testing with the companion desktop Omni Sync Extension.
+- **Remote Tabs Viewer**: Live bottom sheet displaying tabs currently open on paired desktop computers with 1-tap navigation in NEXA.
+- **NEXA Sync Mesh (Upcoming / Testing Phase)**: End-to-end encrypted zero-cloud P2P Wi-Fi synchronization for local devices, designed for testing with the companion desktop NEXA Sync Extension.
 - **CRDT Fractional Indexing**: Dense Base-62 fractional ordering for bookmarks and folders, guaranteeing zero collisions and nested tree integrity.
 - **Privacy & Tombstone Isolation**: Strict quarantine of incognito tabs and deletion tombstones to ensure deleted bookmarks never resurrect.
 
@@ -64,8 +64,8 @@ All notable changes to the NEXA Browser project will be documented in this file.
 
 ### Added
 - **Android Autofill Framework & Third-Party Password Manager Integration**: Enabled standard Android Autofill Framework on GeckoView (`setAutofillEnabled(true)` and `IMPORTANT_FOR_AUTOFILL_YES`) alongside form autofill prefs (`signon.autofillForms`, `dom.forms.autocomplete.formautofill`, `extensions.formautofill.available`). Full compatibility with Bitwarden, 1Password, KeePass, Proton Pass, and Google Autofill.
-- **Autofill Provider Preference Selector**: Added configuration option in *Settings > Privacy & Security* to choose between Android System Autofill, Omni Password Vault, or Both without input focus theft.
-- **WebExtension `browser.downloads` Native Bridge**: Connected GeckoView 145's `WebExtension.DownloadDelegate` into Omni's `StreamDownloadEngine`, enabling WebExtensions (like Media Grabber) to initiate and manage native downloads.
+- **Autofill Provider Preference Selector**: Added configuration option in *Settings > Privacy & Security* to choose between Android System Autofill, NEXA Password Vault, or Both without input focus theft.
+- **WebExtension `browser.downloads` Native Bridge**: Connected GeckoView 145's `WebExtension.DownloadDelegate` into NEXA's `StreamDownloadEngine`, enabling WebExtensions (like Media Grabber) to initiate and manage native downloads.
 - **Extension Download Security & Policy**: Added download confirmation prompts, filename sanitization against path traversal, safe URI scheme validation (`http`, `https`, `blob`, `data`), and configurable extension download policies (*Ask every time*, *Always allow trusted extensions*, *Never allow*).
 - **HTTP Range Resumable Downloads**: Upgraded `StreamDownloadEngine` with `Range: bytes=X-` partial content resumption, automatic fallback on HTTP 200, Range Not Satisfiable (HTTP 416) handling, and download persistence across browser restarts.
 - **Enhanced Download Manager UX**: Added inline Retry/Resume buttons on interrupted downloads and 3-dot dropdown menu actions (Retry/Resume, Pause, Open source page, Copy download link, Share, Rename, Delete).
@@ -118,7 +118,7 @@ All notable changes to the NEXA Browser project will be documented in this file.
 ### Fixed
 - **Android 11+ Package Visibility & External File Opener**: Resolved "no app available to open this file" issue by adding package queries (`ACTION_VIEW`, `ACTION_SEND`, `ACTION_INSTALL_PACKAGE`) to `AndroidManifest.xml` and explicit `grantUriPermission()` calls across resolved target apps.
 - **Physical File Deletion & Vault Synchronization**: Fixed `deleteDownload()` to physically delete files from local storage, remove MediaStore records, and sync deletion and renaming with the encrypted SQLCipher Room vault (`PrivateLockerManager.kt`).
-- **Built-in Force Dark WebExtension & Glitch Fixes**: Renamed extension to `"Omni Force Dark Theme"` (`omni-force-dark@omnibrowser.app`), fixed Google Search dark mode glitches via native `color-scheme: dark` injection and `PREF=f6=400` cookie setting.
+- **Built-in Force Dark WebExtension & Glitch Fixes**: Renamed extension to `"NEXA Force Dark Theme"` (`nexa-force-dark@nexabrowser.app`), fixed Google Search dark mode glitches via native `color-scheme: dark` injection and `PREF=f6=400` cookie setting.
 
 ---
 
@@ -143,7 +143,7 @@ All notable changes to the NEXA Browser project will be documented in this file.
 ### Added
 - **Dedicated Theme Bottom Sheet**: Introduced a quick-access Theme bottom sheet containing Theme Mode options (Light, Dark, AMOLED), an interactive App Nav Scaler slider (80%-130%), and 6 dynamic accent color pickers.
 - **Telegram Bot Direct Help & Feedback Integration**: Upgraded "Help & feedback" across all menus (top bar dropdown, bottom sheet, settings) to connect directly to the team's Telegram bot endpoint for instant user suggestions and bug reports.
-- **Feature Parity in Dropdown Menu**: Added Theme and Quick Tools menu items directly to `omnimenuDropdown` for top and split address bar navigation modes.
+- **Feature Parity in Dropdown Menu**: Added Theme and Quick Tools menu items directly to `nexamenuDropdown` for top and split address bar navigation modes.
 
 ### Changed
 - **Compact Quick Tools Grid**: Redesigned the Quick Tools sheet layout to be ~30% vertically sleeker with 50dp circle icons, tighter paddings, and 10.5sp text labels to eliminate empty scroll space.

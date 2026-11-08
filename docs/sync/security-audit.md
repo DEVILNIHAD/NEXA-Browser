@@ -1,7 +1,7 @@
-# Omni Sync Independent Security & Cryptographic Audit Report
+# NEXA Sync Independent Security & Cryptographic Audit Report
 
 **Date:** 2026-08-22  
-**Target Systems:** Omni Android (`com.devilnihad.nexabrowser.sync`), Desktop Core (`@omni-sync/core`), Chrome/Firefox Extensions, Zero-Knowledge Relay  
+**Target Systems:** NEXA Android (`com.devilnihad.nexa.sync`), Desktop Core (`@nexa-sync/core`), Chrome/Firefox Extensions, Zero-Knowledge Relay  
 **Auditor:** Principal Cryptographic Security & AppSec Engineering Review  
 **Status:** **PASSED · ZERO CRITICAL/HIGH VULNERABILITIES**
 
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-An exhaustive security, privacy, and cryptographic audit was performed across all 17 phases of the Omni Sync codebase. Omni Sync was audited against state-of-the-art standards:
+An exhaustive security, privacy, and cryptographic audit was performed across all 17 phases of the NEXA Sync codebase. NEXA Sync was audited against state-of-the-art standards:
 - **Zero Cloud Storage & Zero-Knowledge Architecture**: Verified. Relay servers route opaque ciphertext envelopes without holding encryption keys.
 - **End-to-End Encryption**: Verified. Standard audited NIST P-256 (`secp256r1`) ECDH key agreement with `HKDF-SHA256` salt/info separation deriving 256-bit `AES-GCM` keys.
 - **Replay & Tamper Resistance**: Verified. Authenticated Additional Data (AAD) binds `$senderDeviceId:$sequenceNumber` directly into AES-GCM tags, preventing sequence replay and packet reordering.
@@ -34,7 +34,7 @@ An exhaustive security, privacy, and cryptographic audit was performed across al
 ## 3. Cryptographic Verification & Test Vectors
 
 - **Key Agreement**: `ECDH (P-256)` mutually verified between Android Keystore and WebCrypto (`SubtleCrypto`).
-- **Key Derivation**: `HKDF-SHA256` with `"omni-sync-v1-salt"` and info `"omni-sync-aes-gcm-key"`.
+- **Key Derivation**: `HKDF-SHA256` with `"nexa-sync-v1-salt"` and info `"nexa-sync-aes-gcm-key"`.
 - **SAS Out-of-Band Verification**: 6-digit numeric Short Authentication String derived via `HMAC-SHA256` over public keys + random exchange nonce.
 - **Frame Bounding**: Maximum LAN/WebRTC frame size constrained to 10 MB to prevent memory exhaustion attacks.
 
@@ -42,4 +42,4 @@ An exhaustive security, privacy, and cryptographic audit was performed across al
 
 ## 4. Conclusion & Sign-Off
 
-The Omni Sync architecture meets the highest security, privacy, and zero-knowledge standards. No high or critical vulnerabilities remain. The system is approved for production release.
+The NEXA Sync architecture meets the highest security, privacy, and zero-knowledge standards. No high or critical vulnerabilities remain. The system is approved for production release.

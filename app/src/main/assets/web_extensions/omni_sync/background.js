@@ -157,7 +157,7 @@ var FirefoxSyncBridge = class {
         }
       }
     } catch (e) {
-      console.warn("[Omni Sync Firefox] Failed to apply remote operation:", op, e);
+      console.warn("[NEXA Sync Firefox] Failed to apply remote operation:", op, e);
     } finally {
       this.setRemoteApplying(false);
     }
@@ -277,8 +277,8 @@ var CryptoEngine = class {
       name: "ECDH",
       public: peerPublicKey
     }, privateKey, 256);
-    const salt = new TextEncoder().encode("omni-sync-v1-salt");
-    const info = new TextEncoder().encode("omni-sync-aes-gcm-key");
+    const salt = new TextEncoder().encode("nexa-sync-v1-salt");
+    const info = new TextEncoder().encode("nexa-sync-aes-gcm-key");
     const hkdfKey = await this.subtle.importKey("raw", rawSecret, { name: "HKDF" }, false, ["deriveKey"]);
     return this.subtle.deriveKey({
       name: "HKDF",
@@ -552,7 +552,7 @@ browserApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           );
           const newDevice = {
             deviceId: inv.deviceId,
-            deviceName: inv.deviceName || "Omni Android Device",
+            deviceName: inv.deviceName || "NEXA Android Device",
             publicKeyBase64: pubKey,
             lanHost: inv.lanHost || null,
             lanPort: inv.lanPort || 8765,
@@ -643,11 +643,11 @@ browserApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             if (result && result.remoteTabs && Array.isArray(result.remoteTabs)) {
               await browserApi.storage.local.set({
                 remoteTabs: result.remoteTabs,
-                remoteDeviceName: peer.deviceName || "Omni Android Phone"
+                remoteDeviceName: peer.deviceName || "NEXA Android Phone"
               });
             }
           } catch (err) {
-            console.warn(`[Omni Sync Firefox] LAN sync with ${peer.deviceName || peer.deviceId} failed:`, err.message);
+            console.warn(`[NEXA Sync Firefox] LAN sync with ${peer.deviceName || peer.deviceId} failed:`, err.message);
             syncErrors.push(`${peer.deviceName || "Peer"}: ${err.message}`);
           }
         }
@@ -656,7 +656,7 @@ browserApi.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           triggerSuccessBadge();
           const peerNames = peers.map((p) => p.deviceName || "Phone").join(", ");
           showSyncNotification(
-            "Omni Sync: Synchronized",
+            "NEXA Sync: Synchronized",
             `Synced ${outbox.length} bookmarks & ${localTabs.length} tabs with ${peerNames}`
           );
         }

@@ -1,9 +1,9 @@
 # Privacy Policy & Data Safety Declaration
 
 **Last Updated:** June 8, 2026  
-**Publisher:** RebelRoot  
+**Publisher:** DEVILNIHAD  
 **App Name:** NEXA Browser  
-**Package Name:** `com.devilnihad.nexabrowser`
+**Package Name:** `com.devilnihad.nexa`
 
 This document details the Privacy Policy and Data Security configurations for NEXA Browser. Because NEXA Browser is built on a strict privacy-first, on-device-first architecture, the application does not collect, monitor, store, or share any user personal information on remote servers.
 
@@ -12,9 +12,9 @@ This document details the Privacy Policy and Data Security configurations for NE
 ## 1. Privacy Policy
 
 ### 1.1 Data Collection & Transmission
-- **Zero Remote Storage:** RebelRoot does not host any backend databases, account servers, or analytics pipelines for NEXA Browser. All browsing history, bookmarks, open tabs, cookies, and locker files remain entirely on your local device.
+- **Zero Remote Storage:** DEVILNIHAD does not host any backend databases, account servers, or analytics pipelines for NEXA Browser. All browsing history, bookmarks, open tabs, cookies, and locker files remain entirely on your local device.
 - **No Telemetry / Analytics:** All analytics and diagnostic telemetry inside secondary components have been deactivated:
-  - **No Google ML Kit:** NEXA Browser does not bundle Google ML Kit. Translation runs online via the Google Translate endpoint; no translation strings or scanner logs are stored by Omni.
+  - **No Google ML Kit:** NEXA Browser does not bundle Google ML Kit. Translation runs online via the Google Translate endpoint; no translation strings or scanner logs are stored by NEXA.
   - **No Third-Party SDKs:** The app contains no advertisement SDKs, crash reporters (like Firebase Crashlytics), or telemetry tracking code.
 
 ### 1.2 Permissions & Usage Disclosure
@@ -22,11 +22,11 @@ NEXA Browser requests permissions only when necessary to perform core browser an
 
 | Permission | Purpose | Data Safety Context |
 |------------|---------|---------------------|
-| **INTERNET** | Core web browsing, loading websites, and downloading web resources. | No URL requests or browsing traffic are logged or shared by RebelRoot. |
+| **INTERNET** | Core web browsing, loading websites, and downloading web resources. | No URL requests or browsing traffic are logged or shared by DEVILNIHAD. |
 | **USE_BIOMETRIC** | Authenticating user access to the secure Locker feature. | Handled via Android's Secure Biometric API. Biometric credentials are stored securely in the device's hardware (TEE/StrongBox) and are never accessible to the app. |
 | **CAMERA** | Allowing websites to access the camera for in-browser video calls (WebRTC), and scanning QR codes. | Processing is local. Video frames are only streamed to web destinations explicitly approved by the user. |
 | **RECORD_AUDIO** | Allowing websites to capture audio for voice calls (WebRTC) and audio recordings. | Streams are peer-to-peer or sent directly to websites explicitly authorized by the user. |
-| **ACCESS_FINE_LOCATION** & **ACCESS_COARSE_LOCATION** | Sharing your device location with websites that request it (e.g., maps, local delivery). | Geolocation coordinates are only accessed after explicit user prompt approvals and are sent directly to the requesting site. RebelRoot never collects location history. |
+| **ACCESS_FINE_LOCATION** & **ACCESS_COARSE_LOCATION** | Sharing your device location with websites that request it (e.g., maps, local delivery). | Geolocation coordinates are only accessed after explicit user prompt approvals and are sent directly to the requesting site. DEVILNIHAD never collects location history. |
 | **READ / WRITE STORAGE** & **READ_MEDIA_** | Accessing the device storage to save file downloads or import/export files from/into the secure Locker. | Uses MediaStore and Scoped Storage APIs to restrict permission scopes to media folders only. |
 | **POST_NOTIFICATIONS** | Displaying progress bars and completion statuses for active file downloads. | Local system notifications only. |
 

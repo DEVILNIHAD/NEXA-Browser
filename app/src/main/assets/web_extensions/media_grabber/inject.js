@@ -1,10 +1,10 @@
-// inject.js — Omni Media Detection & Native Player Handoff Hook
+// inject.js — NEXA Media Detection & Native Player Handoff Hook
 (function() {
     'use strict';
 
     // Prevent duplicate injection in the same frame
-    if (window._omniMediaGrabberInjected) return;
-    window._omniMediaGrabberInjected = true;
+    if (window._nexaMediaGrabberInjected) return;
+    window._nexaMediaGrabberInjected = true;
 
     // Configuration
     let nativePlayerEnabled = true;
@@ -28,16 +28,16 @@
 
     function registerVideo(video) {
         if (!video || video.tagName !== 'VIDEO') return;
-        if (!video._omniVideoId) {
-            video._omniVideoId = 'omni_vid_' + (++videoIdCounter) + '_' + Math.random().toString(36).substr(2, 6);
+        if (!video._nexaVideoId) {
+            video._nexaVideoId = 'nexa_vid_' + (++videoIdCounter) + '_' + Math.random().toString(36).substr(2, 6);
         }
-        trackedVideos.set(video._omniVideoId, { video: video });
+        trackedVideos.set(video._nexaVideoId, { video: video });
     }
 
     function associateStreamWithActiveVideos(streamUrl) {
         if (!streamUrl) return;
         document.querySelectorAll('video').forEach(video => {
-            const id = video._omniVideoId;
+            const id = video._nexaVideoId;
             if (id && (!video.paused || trackedVideos.has(id))) {
                 if (!videoStreamAssociations.has(id)) {
                     videoStreamAssociations.set(id, new Set());
@@ -49,7 +49,7 @@
 
     function getAssociatedStreamsForVideo(video) {
         const set = new Set();
-        const id = video ? video._omniVideoId : null;
+        const id = video ? video._nexaVideoId : null;
         if (id && videoStreamAssociations.has(id)) {
             videoStreamAssociations.get(id).forEach(u => set.add(u));
         }
@@ -65,7 +65,7 @@
         const data = event.data;
         if (!data || !data.type) return;
 
-        if (data.type === 'OMNI_SET_NATIVE_PLAYER') {
+        if (data.type === 'NEXA_SET_NATIVE_PLAYER') {
             nativePlayerEnabled = !!data.enabled;
             youtubeEnabled = !!data.youtubeEnabled;
         } else if (data.type === 'EVAL_JS') {
@@ -93,7 +93,7 @@
                 try {
                     targetVideo.pause();
                 } catch(e) {}
-                targetVideo._omniIntercepted = true;
+                targetVideo._nexaIntercepted = true;
             }
             pendingHandoffVideo = null;
             pendingHandoffId = null;
@@ -112,11 +112,11 @@
 
             if (targetVideo) {
                 try {
-                    if (targetVideo._omniWasPlayingBeforeHandoff) {
+                    if (targetVideo._nexaWasPlayingBeforeHandoff) {
                         targetVideo.play().catch(() => {});
                     }
                 } catch(e) {}
-                delete targetVideo._omniIntercepted;
+                delete targetVideo._nexaIntercepted;
             }
             pendingHandoffVideo = null;
             pendingHandoffId = null;
@@ -133,7 +133,7 @@
             console.log('[inject.js] Native session complete');
             activeSessionId = null;
             document.querySelectorAll('video').forEach(v => {
-                delete v._omniIntercepted;
+                delete v._nexaIntercepted;
             });
         } else if (data.type === 'ADD_DETECTED_MANIFEST') {
             const url = data.url;
@@ -198,7 +198,7 @@
                 targetVideo.pause();
             }
 
-            delete targetVideo._omniIntercepted;
+            delete targetVideo._nexaIntercepted;
         } catch(e) {
             console.error('[inject.js] Error applying restored state to video:', e);
         }
@@ -207,7 +207,7 @@
         window.postMessage({
             type: 'HANDOFF_RESTORED',
             sessionId: sessionId || '',
-            videoId: targetVideo._omniVideoId || videoId || '',
+            videoId: targetVideo._nexaVideoId || videoId || '',
             currentTimeMs: Math.floor(targetVideo.currentTime * 1000),
             isPlaying: !targetVideo.paused
         }, '*');
@@ -225,8 +225,8 @@
         return {
             sessionId: 'h_' + Math.random().toString(36).substr(2, 9),
             handoffId: 'h_' + Math.random().toString(36).substr(2, 9),
-            videoId: video._omniVideoId || '',
-            videoElementId: video._omniVideoId || '',
+            videoId: video._nexaVideoId || '',
+            videoElementId: video._nexaVideoId || '',
             sourceUri: videoUrl,
             pageUrl: window.location.href,
             title: document.title || '',
@@ -254,7 +254,7 @@
 
         pendingHandoffVideo = video;
         pendingHandoffId = handoff.sessionId || handoff.handoffId;
-        video._omniWasPlayingBeforeHandoff = !video.paused;
+        video._nexaWasPlayingBeforeHandoff = !video.paused;
 
         // Collect streams specifically associated with this video element
         const associatedStreams = getAssociatedStreamsForVideo(video);
@@ -290,7 +290,7 @@
             associatedStreams: associatedStreams,
             mimeType: getMimeType(videoUrl),
             title: document.title || 'Video',
-            videoId: video._omniVideoId || '',
+            videoId: video._nexaVideoId || '',
             requestId: 'dl_' + Math.random().toString(36).substr(2, 9)
         }, '*');
     }
@@ -451,9 +451,9 @@
     // Site Player Overlay — Quetta-Style Download Button
     // =========================================================
 
-    const OVERLAY_STYLE_ID = '_omni_site_overlay_style';
-    const OVERLAY_BUTTON_CLASS = '_omni_site_overlay_btn';
-    const OVERLAY_CLASS = '_omni_site_overlay';
+    const OVERLAY_STYLE_ID = '_nexa_site_overlay_style';
+    const OVERLAY_BUTTON_CLASS = '_nexa_site_overlay_btn';
+    const OVERLAY_CLASS = '_nexa_site_overlay';
 
     function ensureOverlayStyles() {
         if (document.getElementById(OVERLAY_STYLE_ID)) return;
@@ -471,13 +471,13 @@
             '  align-items: center;',
             '  gap: 6px;',
             '}',
-            '.' + OVERLAY_CLASS + '._omni_visible {',
+            '.' + OVERLAY_CLASS + '._nexa_visible {',
             '  opacity: 1;',
             '  transform: translateY(0);',
             '}',
-            '.' + OVERLAY_CLASS + '._omni_right { right: 12px; top: 12px; flex-direction: column; }',
-            '.' + OVERLAY_CLASS + '._omni_top { top: 12px; }',
-            '.' + OVERLAY_CLASS + '._omni_bottom { bottom: 12px; }',
+            '.' + OVERLAY_CLASS + '._nexa_right { right: 12px; top: 12px; flex-direction: column; }',
+            '.' + OVERLAY_CLASS + '._nexa_top { top: 12px; }',
+            '.' + OVERLAY_CLASS + '._nexa_bottom { bottom: 12px; }',
             '.' + OVERLAY_BUTTON_CLASS + ' {',
             '  pointer-events: auto;',
             '  width: 40px;',
@@ -518,14 +518,14 @@
 
     function buildOverlay(video) {
         const overlay = document.createElement('div');
-        overlay.className = OVERLAY_CLASS + ' _omni_right';
-        overlay.dataset.omniOverlay = '1';
+        overlay.className = OVERLAY_CLASS + ' _nexa_right';
+        overlay.dataset.nexaOverlay = '1';
 
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = OVERLAY_BUTTON_CLASS;
-        btn.title = 'Download with Omni';
-        btn.setAttribute('aria-label', 'Download with Omni');
+        btn.title = 'Download with NEXA';
+        btn.setAttribute('aria-label', 'Download with NEXA');
         btn.innerHTML = DOWNLOAD_ICON_SVG;
 
         btn.addEventListener('click', (e) => {
@@ -549,7 +549,7 @@
     }
 
     function attachOverlayToVideo(video) {
-        if (!video || video._omniOverlay) return;
+        if (!video || video._nexaOverlay) return;
         ensureOverlayStyles();
         const position = window.getComputedStyle(video).position;
         if (position === 'static') {
@@ -558,11 +558,11 @@
         const overlay = buildOverlay(video);
         const host = video.parentElement || video;
         host.appendChild(overlay);
-        video._omniOverlay = overlay;
-        video._omniOverlayHost = host;
+        video._nexaOverlay = overlay;
+        video._nexaOverlayHost = host;
 
-        const show = () => overlay.classList.add('_omni_visible');
-        const hide = () => overlay.classList.remove('_omni_visible');
+        const show = () => overlay.classList.add('_nexa_visible');
+        const hide = () => overlay.classList.remove('_nexa_visible');
         video.addEventListener('mouseenter', show);
         video.addEventListener('mouseleave', hide);
         video.addEventListener('play', show);
@@ -572,13 +572,13 @@
     }
 
     function detachOverlayFromVideo(video) {
-        const overlay = video._omniOverlay;
-        const host = video._omniOverlayHost || (video.parentElement || video);
+        const overlay = video._nexaOverlay;
+        const host = video._nexaOverlayHost || (video.parentElement || video);
         if (overlay && overlay.parentElement === host) {
             host.removeChild(overlay);
         }
-        video._omniOverlay = null;
-        video._omniOverlayHost = null;
+        video._nexaOverlay = null;
+        video._nexaOverlayHost = null;
     }
 
     // =========================================================
@@ -611,10 +611,10 @@
 
     function scanAndAttachSiteOverlays() {
         document.querySelectorAll('video').forEach(v => {
-            if (isOverlayCandidate(v) && !v._omniOverlay) {
+            if (isOverlayCandidate(v) && !v._nexaOverlay) {
                 registerVideo(v);
                 attachOverlayToVideo(v);
-            } else if (v._omniOverlay && !isOverlayCandidate(v)) {
+            } else if (v._nexaOverlay && !isOverlayCandidate(v)) {
                 detachOverlayFromVideo(v);
             }
         });
@@ -642,13 +642,13 @@
                 for (const node of mutation.removedNodes) {
                     if (node.nodeType === 1) {
                         if (node.tagName === 'VIDEO') {
-                            if (node._omniVideoId) trackedVideos.delete(node._omniVideoId);
-                            if (node._omniOverlay) detachOverlayFromVideo(node);
+                            if (node._nexaVideoId) trackedVideos.delete(node._nexaVideoId);
+                            if (node._nexaOverlay) detachOverlayFromVideo(node);
                             hasVideoMutation = true;
                         } else if (node.firstElementChild && node.querySelector('video')) {
                             node.querySelectorAll('video').forEach(v => {
-                                if (v._omniVideoId) trackedVideos.delete(v._omniVideoId);
-                                if (v._omniOverlay) detachOverlayFromVideo(v);
+                                if (v._nexaVideoId) trackedVideos.delete(v._nexaVideoId);
+                                if (v._nexaOverlay) detachOverlayFromVideo(v);
                             });
                             hasVideoMutation = true;
                         }

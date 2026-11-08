@@ -18,82 +18,82 @@
       "minimumRuntimeVersion": "1.0"
     },
     {
-      "id": "omni-translation-en-es",
+      "id": "nexa-translation-en-es",
       "version": "1.0",
       "task": "translation",
-      "name": "Omni Translation EN → ES",
+      "name": "NEXA Translation EN → ES",
       "sourceLanguage": "en",
       "targetLanguage": "es",
       "sizeBytes": 884,
       "downloadUrl": "asset://ai/models/translation_en_es.json",
       "sha256": null,
-      "license": "Omni",
-      "sourceProject": "Omni Lexicon"
+      "license": "NEXA",
+      "sourceProject": "NEXA Lexicon"
     },
     {
-      "id": "omni-translation-en-fr",
+      "id": "nexa-translation-en-fr",
       "version": "1.0",
       "task": "translation",
-      "name": "Omni Translation EN → FR",
+      "name": "NEXA Translation EN → FR",
       "sourceLanguage": "en",
       "targetLanguage": "fr",
       "sizeBytes": 906,
       "downloadUrl": "asset://ai/models/translation_en_fr.json",
       "sha256": null,
-      "license": "Omni",
-      "sourceProject": "Omni Lexicon"
+      "license": "NEXA",
+      "sourceProject": "NEXA Lexicon"
     },
     {
-      "id": "omni-translation-en-de",
+      "id": "nexa-translation-en-de",
       "version": "1.0",
       "task": "translation",
-      "name": "Omni Translation EN → DE",
+      "name": "NEXA Translation EN → DE",
       "sourceLanguage": "en",
       "targetLanguage": "de",
       "sizeBytes": 894,
       "downloadUrl": "asset://ai/models/translation_en_de.json",
       "sha256": null,
-      "license": "Omni",
-      "sourceProject": "Omni Lexicon"
+      "license": "NEXA",
+      "sourceProject": "NEXA Lexicon"
     },
     {
-      "id": "omni-translation-es-en",
+      "id": "nexa-translation-es-en",
       "version": "1.0",
       "task": "translation",
-      "name": "Omni Translation ES → EN",
+      "name": "NEXA Translation ES → EN",
       "sourceLanguage": "es",
       "targetLanguage": "en",
       "sizeBytes": 884,
       "downloadUrl": "asset://ai/models/translation_es_en.json",
       "sha256": null,
-      "license": "Omni",
-      "sourceProject": "Omni Lexicon"
+      "license": "NEXA",
+      "sourceProject": "NEXA Lexicon"
     },
     {
-      "id": "omni-translation-fr-en",
+      "id": "nexa-translation-fr-en",
       "version": "1.0",
       "task": "translation",
-      "name": "Omni Translation FR → EN",
+      "name": "NEXA Translation FR → EN",
       "sourceLanguage": "fr",
       "targetLanguage": "en",
       "sizeBytes": 906,
       "downloadUrl": "asset://ai/models/translation_fr_en.json",
       "sha256": null,
-      "license": "Omni",
-      "sourceProject": "Omni Lexicon"
+      "license": "NEXA",
+      "sourceProject": "NEXA Lexicon"
     },
     {
-      "id": "omni-translation-de-en",
+      "id": "nexa-translation-de-en",
       "version": "1.0",
       "task": "translation",
-      "name": "Omni Translation DE → EN",
+      "name": "NEXA Translation DE → EN",
       "sourceLanguage": "de",
       "targetLanguage": "en",
       "sizeBytes": 877,
       "downloadUrl": "asset://ai/models/translation_de_en.json",
       "sha256": null,
-      "license": "Omni",
-      "sourceProject": "Omni Lexicon"
+      "license": "NEXA",
+      "sourceProject": "NEXA Lexicon"
     }
   ]
 }

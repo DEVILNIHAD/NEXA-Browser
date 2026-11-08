@@ -1,37 +1,20 @@
-# 🏷️ Trademark & Attribution Policy
+# NEXA Browser — Branding & Attribution
 
-This policy governs the branding, naming, and attribution requirements for **NEXA Browser** and any derivative works, forks, or distributions based on this codebase.
+NEXA Browser is a rebranded derivative distribution based on an upstream open-source browser project.
 
-While the source code is licensed under the copyleft **GNU General Public License v3.0 (GPLv3)**, the copyright license does *not* grant you rights to use the project's trademarks, logos, or brand identity.
+## NEXA branding
 
----
+The **NEXA Browser** name, NEXA visual identity, custom logo, icons, screenshots, and other new branding introduced by this distribution are part of the NEXA project maintained by **DEVILNIHAD**.
 
-## 1. Trademark Guidelines
+## Upstream attribution
 
-The names **"NEXA Browser"**, **"Omni"** (in the context of browser software), and **"RebelRoot"**, as well as all associated logos, icons, and graphics in this repository, are proprietary trademarks of **RebelRoot Ltd**.
+This repository contains substantial code derived from the upstream project. The upstream project's copyright notices and the GPL-3.0 license are retained in `LICENSE`.
 
-If you fork this repository, modify the code, or distribute a derivative version of this browser:
-*   **Must Rename:** You **must** rename the application. You cannot use "NEXA Browser", "Omni", or "RebelRoot" in the name of your application, package, or distribution.
-*   **Must Rebrand:** You **must** replace all branding, icons, and official logos with your own unique visual assets before publishing or sharing.
-*   **No Endorsement:** You may not state or imply that your fork is endorsed by, affiliated with, or built in partnership with RebelRoot.
+Upstream project:
+https://github.com/REBEL-ROOT/omni-browser
 
----
+This distribution is not endorsed by or affiliated with the upstream project or its authors.
 
-## 2. Mandatory Attribution (GPLv3 Section 7)
+## Distribution note
 
-Pursuant to **Section 7(b) of the GNU General Public License v3.0**, we require the preservation of reasonable legal notices and author attribution. 
-
-Any distribution, fork, or derivative work of this software **must** comply with the following attribution terms:
-
-1.  **Repository Link:** You must prominently display a clickable hyperlink back to the original repository (`https://github.com/REBEL-ROOT/omni-browser`) at the top of your fork's `README.md` or landing page.
-2.  **In-App Credits:** You must retain or add a visible credit in the application's "About" or "Settings" screen stating:
-    > *“Based on NEXA Browser by RebelRoot (github.com/REBEL-ROOT/omni-browser)”*
-3.  **Preservation of Copyright Headers:** All copyright notices (`Copyright (C) 2026 RebelRoot Ltd`) at the top of original source files must be preserved in their entirety.
-
----
-
-## 3. Policy Enforcement
-
-Failure to comply with either the Trademark guidelines or the Mandatory Attribution requirements constitutes a violation of the licensing terms of this repository and will result in a formal DMCA takedown request or legal trademark enforcement.
-
-For any questions regarding commercial licensing or licensing exceptions, contact us directly on our official [LinkedIn](https://www.linkedin.com/company/rebelroot).
+NEXA Browser changes the application name, package identity, visual branding, and project metadata. Original source copyright headers that remain in source files are preserved where required by the upstream license.

@@ -9,10 +9,10 @@
     <color name="splash_bg">#FFFFFF</color>
     <color name="app_icon_dark_bg">#1C1C1E</color>
     <color name="app_icon_light_bg">#FFFFFF</color>
-    <color name="app_icon_blue_bg">#52D6FF</color>
+    <color name="app_icon_blue_bg">#0A84FF</color>
     <color name="app_icon_gold_bg">#FFB800</color>
     <!-- Launcher icon plate colors (adaptive-icon background layers). Sampled
          from the source artworks so the mask crop blends with the ring. -->
-    <color name="app_icon_aura_light_bg">#F3F7FF</color>
-    <color name="app_icon_aura_dark_bg">#0A1020</color>
+    <color name="app_icon_aura_light_bg">#F5F7FA</color>
+    <color name="app_icon_aura_dark_bg">#0D1117</color>
 </resources>

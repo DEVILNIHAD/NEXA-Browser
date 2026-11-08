@@ -97,7 +97,7 @@ All extensions use `setAllowedInPrivateBrowsing(ext, true)` to function in Incog
 1. `webRequest.onBeforeRequest` listener in `media_grabber/background.js` captures network-level HLS/DASH URLs.
 2. MSE hooks in `media_grabber/content.js` intercept `MediaSource.addSourceBuffer` for blob-based streams.
 
-Both paths relay detected media URLs to the native app via `chrome.runtime.sendNativeMessage('omniApp', {...})`.
+Both paths relay detected media URLs to the native app via `chrome.runtime.sendNativeMessage('nexaApp', {...})`.
 
 **Native playback:**
 - `VideoPlayerScreen.kt` wraps **Media3 ExoPlayer**.

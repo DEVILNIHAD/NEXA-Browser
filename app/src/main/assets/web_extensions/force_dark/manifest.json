@@ -1,11 +1,11 @@
 {
     "manifest_version": 2,
-    "name": "Omni Force Dark Theme",
+    "name": "NEXA Force Dark Theme",
     "version": "2.0.0",
     "description": "Premium, intelligent dark theme engine with dynamic contrast inversion, OLED black tuning, and media protection.",
     "browser_specific_settings": {
         "gecko": {
-            "id": "omni-force-dark@omnibrowser.app"
+            "id": "nexa-force-dark@nexabrowser.app"
         }
     },
     "content_scripts": [

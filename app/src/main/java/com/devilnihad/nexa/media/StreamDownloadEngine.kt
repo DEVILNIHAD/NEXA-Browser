@@ -1,0 +1,2282 @@
+/*
+ * NEXA Browser - A premium, private, and secure web browser.
+ * Copyright (C) 2026 DEVILNIHAD Ltd
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package com.devilnihad.nexa.media
+
+import com.devilnihad.nexa.browser.SecurityPolicy
+
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import com.devilnihad.nexa.R
+import android.content.BroadcastReceiver
+import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
+import android.webkit.MimeTypeMap
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import com.devilnihad.nexa.tools.locker.PrivateLockerManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.DelicateCoroutinesApi
+
+@OptIn(DelicateCoroutinesApi::class)
+class StreamDownloadEngine(
+    private val context: Context,
+    private val ffmpegBridge: FFmpegBridge,
+    private val privateLockerManager: PrivateLockerManager
+) {
+
+    sealed class DownloadProgress {
+        data class Downloading(val percent: Int, val bytesDownloaded: Long) : DownloadProgress()
+        data class Muxing(val message: String) : DownloadProgress()
+        // openUri: the MediaStore content:// URI for public downloads (null for locker/video)
+        data class Complete(val file: File, val sizeBytes: Long, val openUri: Uri? = null) : DownloadProgress()
+        data class Error(val message: String) : DownloadProgress()
+    }
+
+    data class DownloadJob(
+        val id: String,
+        val filename: String,
+        val url: String,
+        val saveToLocker: Boolean,
+        val progress: StateFlow<DownloadProgress>,
+        val isGeneric: Boolean = false,
+        val contentType: String? = null,
+        val referrerUrl: String? = null,
+        val cookies: String? = null,
+        val audioUrl: String? = null,
+        val mediaType: MediaInterceptor.MediaType = MediaInterceptor.MediaType.MP4,
+        val sourceOrigin: String? = null,
+        val canResume: Boolean = false,
+        val bytesDownloaded: Long = 0L
+    )
+
+    private val _jobs = MutableStateFlow<List<DownloadJob>>(emptyList())
+    val jobs: StateFlow<List<DownloadJob>> = _jobs.asStateFlow()
+
+    private val runningJobs = ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+    private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private val channelId = "downloads_channel"
+    private val nextNotificationId = AtomicInteger(1000)
+    private val jobNotificationIds = ConcurrentHashMap<String, Int>()
+
+    private val cancelReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "ACTION_CANCEL_DOWNLOAD") {
+                val jobId = intent.getStringExtra("job_id")
+                if (jobId != null) {
+                    cancelDownload(jobId)
+                }
+            }
+        }
+    }
+
+    init {
+        createNotificationChannel()
+        val filter = IntentFilter("ACTION_CANCEL_DOWNLOAD")
+        ContextCompat.registerReceiver(
+            context,
+            cancelReceiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        loadDownloadHistory()
+    }
+
+    private fun createNotificationChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val name = context.getString(R.string.channel_downloads_name)
+            val descriptionText = context.getString(R.string.channel_downloads_desc)
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val channel = NotificationChannel(channelId, name, importance).apply {
+                description = descriptionText
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun getNotificationId(jobId: String): Int {
+        return jobNotificationIds.getOrPut(jobId) { nextNotificationId.incrementAndGet() }
+    }
+
+    private fun updateNotification(jobId: String, title: String, content: String, progress: Int, isIndeterminate: Boolean = false) {
+        val notificationId = getNotificationId(jobId)
+        val cancelIntent = Intent("ACTION_CANCEL_DOWNLOAD").apply {
+            putExtra("job_id", jobId)
+        }
+        val pendingCancelIntent = PendingIntent.getBroadcast(
+            context,
+            notificationId,
+            cancelIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val openDownloadsIntent = Intent(context, com.devilnihad.nexa.MainActivity::class.java).apply {
+            action = "com.devilnihad.nexa.ACTION_OPEN_DOWNLOADS"
+            putExtra("extra_open_downloads", true)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        val pendingOpenDownloads = PendingIntent.getActivity(
+            context,
+            notificationId + 10000,
+            openDownloadsIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(progress in 0..99)
+            .setAutoCancel(progress >= 100 || progress < 0)
+            .setContentIntent(pendingOpenDownloads)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, context.getString(R.string.cancel_text), pendingCancelIntent)
+
+        if (progress in 0..100) {
+            builder.setProgress(100, progress, isIndeterminate)
+        } else if (isIndeterminate) {
+            builder.setProgress(100, 0, true)
+        }
+
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            notificationManager.notify(notificationId, builder.build())
+        }
+    }
+
+    private fun showCompleteNotification(
+        jobId: String,
+        title: String,
+        filename: String,
+        file: File? = null,
+        openUri: Uri? = null
+    ) {
+        val notificationId = getNotificationId(jobId)
+
+        val openDownloadsIntent = Intent(context, com.devilnihad.nexa.MainActivity::class.java).apply {
+            action = "com.devilnihad.nexa.ACTION_OPEN_DOWNLOADS"
+            putExtra("extra_open_downloads", true)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        val pendingOpenDownloads = PendingIntent.getActivity(
+            context,
+            notificationId + 10000,
+            openDownloadsIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val ext = filename.substringAfterLast('.', "").lowercase()
+        val mime = if (ext.isNotEmpty()) {
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
+        } else {
+            "*/*"
+        }
+
+        val viewFileIntent = when {
+            openUri != null -> {
+                Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(openUri, mime)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            file != null && file.exists() -> {
+                try {
+                    val contentUri = androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        file
+                    )
+                    Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(contentUri, mime)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                } catch (e: Exception) {
+                    Log.w("StreamDownloadEngine", "FileProvider URI creation failed: $e")
+                    null
+                }
+            }
+            else -> null
+        }
+
+        val pendingViewFile = if (viewFileIntent != null) {
+            PendingIntent.getActivity(
+                context,
+                notificationId + 20000,
+                viewFileIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            null
+        }
+
+        val mainPendingIntent = pendingViewFile ?: pendingOpenDownloads
+
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle(context.getString(R.string.download_notification_complete))
+            .setContentText(filename)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setContentIntent(mainPendingIntent)
+            .addAction(
+                android.R.drawable.ic_menu_view,
+                "Downloads",
+                pendingOpenDownloads
+            )
+
+        if (pendingViewFile != null) {
+            builder.addAction(
+                android.R.drawable.ic_menu_agenda,
+                "Open",
+                pendingViewFile
+            )
+        }
+
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            notificationManager.notify(notificationId, builder.build())
+        }
+    }
+
+    private fun showErrorNotification(jobId: String, title: String, errorMsg: String) {
+        val notificationId = getNotificationId(jobId)
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle(context.getString(R.string.download_notification_failed))
+            .setContentText(errorMsg)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setOngoing(false)
+
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            notificationManager.notify(notificationId, builder.build())
+        }
+    }
+
+    fun registerExternalJob(
+        filename: String,
+        url: String,
+        saveToLocker: Boolean,
+        isGeneric: Boolean = true
+    ): Pair<String, MutableStateFlow<DownloadProgress>> {
+        val jobId = UUID.randomUUID().toString()
+        val progressFlow = MutableStateFlow<DownloadProgress>(DownloadProgress.Downloading(0, 0L))
+        val job = DownloadJob(
+            id = jobId,
+            filename = filename,
+            url = url,
+            saveToLocker = saveToLocker,
+            progress = progressFlow,
+            isGeneric = isGeneric
+        )
+        _jobs.update { list -> list + job }
+        saveDownloadHistory()
+        updateNotification(jobId, filename, context.getString(R.string.download_progress_starting), 0)
+        return Pair(jobId, progressFlow)
+    }
+
+    fun updateExternalJobProgress(
+        jobId: String,
+        filename: String,
+        progress: Int,
+        statusText: String,
+        bytesDownloaded: Long = 0L
+    ) {
+        val job = _jobs.value.find { it.id == jobId }
+        if (job != null) {
+            (job.progress as? MutableStateFlow)?.value = DownloadProgress.Downloading(progress, bytesDownloaded)
+            updateNotification(jobId, filename, statusText, progress)
+        }
+    }
+
+    fun completeExternalJob(
+        jobId: String,
+        filename: String,
+        file: File,
+        sizeBytes: Long,
+        openUri: Uri? = null
+    ) {
+        val job = _jobs.value.find { it.id == jobId }
+        if (job != null) {
+            (job.progress as? MutableStateFlow)?.value = DownloadProgress.Complete(file, sizeBytes, openUri)
+            showCompleteNotification(jobId, filename, filename, file, openUri)
+            saveDownloadHistory()
+        }
+    }
+
+    fun failExternalJob(
+        jobId: String,
+        filename: String,
+        errorMsg: String
+    ) {
+        val job = _jobs.value.find { it.id == jobId }
+        if (job != null) {
+            (job.progress as? MutableStateFlow)?.value = DownloadProgress.Error(errorMsg)
+            showErrorNotification(jobId, filename, errorMsg)
+            saveDownloadHistory()
+        }
+    }
+
+    fun cancelDownload(jobId: String) {
+        deleteDownload(jobId, deleteFileFromDisk = false)
+    }
+
+    fun deleteDownload(jobId: String, deleteFileFromDisk: Boolean = true) {
+        runningJobs[jobId]?.cancel()
+        runningJobs.remove(jobId)
+
+        val job = _jobs.value.find { it.id == jobId }
+        if (job != null && deleteFileFromDisk) {
+            val progress = job.progress.value
+            if (progress is DownloadProgress.Complete) {
+                val file = progress.file
+                val openUri = progress.openUri
+
+                if (openUri != null) {
+                    try {
+                        context.contentResolver.delete(openUri, null, null)
+                    } catch (e: Exception) {
+                        Log.e("DownloadEngine", "Failed MediaStore URI deletion for $openUri", e)
+                    }
+                }
+
+                try {
+                    if (file.exists()) {
+                        val deleted = file.delete()
+                        Log.i("DownloadEngine", "Physical file delete (${file.absolutePath}): $deleted")
+                    }
+                } catch (e: Exception) {
+                    Log.e("DownloadEngine", "Failed physical file delete: ${file.absolutePath}", e)
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    try {
+                        val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                        val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+                        val args = arrayOf(job.filename)
+                        context.contentResolver.delete(collection, selection, args)
+                    } catch (e: Exception) {
+                        Log.e("DownloadEngine", "Failed MediaStore query delete for ${job.filename}", e)
+                    }
+                }
+
+                if (job.saveToLocker) {
+                    try {
+                        val secureId = file.name
+                        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+                            try {
+                                privateLockerManager.deleteFile(secureId)
+                            } catch (e: Exception) {
+                                if (file.exists()) file.delete()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("DownloadEngine", "Failed to delete locker file: ${job.filename}", e)
+                    }
+                }
+            }
+        }
+
+        _jobs.update { list -> list.filter { it.id != jobId } }
+        val notificationId = jobNotificationIds.remove(jobId)
+        if (notificationId != null) {
+            notificationManager.cancel(notificationId)
+        }
+        saveDownloadHistory()
+    }
+
+    fun renameDownload(jobId: String, newName: String): Boolean {
+        val job = _jobs.value.find { it.id == jobId } ?: return false
+        val progress = job.progress.value
+        if (progress !is DownloadProgress.Complete) return false
+
+        val oldFile = progress.file
+        val extension = oldFile.extension
+        val finalName = if (newName.endsWith(".$extension", ignoreCase = true) || extension.isEmpty()) {
+            newName.trim()
+        } else {
+            "${newName.trim()}.$extension"
+        }
+
+        val parentDir = oldFile.parentFile
+        val newFile = if (parentDir != null && !job.saveToLocker) File(parentDir, finalName) else oldFile
+
+        val renamed = if (job.saveToLocker) {
+            val secureId = oldFile.name
+            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+                privateLockerManager.renameFile(secureId, finalName)
+            }
+            true
+        } else {
+            try {
+                if (oldFile.exists()) {
+                    oldFile.renameTo(newFile)
+                } else {
+                    true
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Failed to rename file from ${oldFile.absolutePath} to ${newFile.absolutePath}", e)
+                false
+            }
+        }
+
+        if (renamed) {
+            val updatedProgress = DownloadProgress.Complete(newFile, progress.sizeBytes, progress.openUri)
+            val updatedJob = job.copy(filename = finalName, progress = MutableStateFlow(updatedProgress))
+
+            _jobs.update { list ->
+                list.map { if (it.id == jobId) updatedJob else it }
+            }
+            saveDownloadHistory()
+            return true
+        }
+        return false
+    }
+
+    private fun setupNotificationObserver(jobId: String, filename: String, progressFlow: StateFlow<DownloadProgress>) {
+        kotlinx.coroutines.GlobalScope.launch(Dispatchers.Main) {
+            var lastPercent = -2
+            progressFlow.collect { progress ->
+                when (progress) {
+                    is DownloadProgress.Downloading -> {
+                        val pct = progress.percent
+                        val text = if (pct >= 0) context.getString(R.string.download_progress_completed, pct) else context.getString(R.string.download_progress_downloading)
+                        updateNotification(jobId, filename, text, pct)
+                        if (pct != lastPercent) {
+                            lastPercent = pct
+                            saveDownloadHistory()
+                        }
+                    }
+                    is DownloadProgress.Muxing -> {
+                        updateNotification(jobId, filename, progress.message, -1, isIndeterminate = true)
+                        saveDownloadHistory()
+                    }
+                    is DownloadProgress.Complete -> {
+                        showCompleteNotification(jobId, filename, context.getString(R.string.download_saved_successfully), progress.file, progress.openUri)
+                        jobNotificationIds.remove(jobId)
+                        saveDownloadHistory()
+                    }
+                    is DownloadProgress.Error -> {
+                        showErrorNotification(jobId, filename, progress.message)
+                        jobNotificationIds.remove(jobId)
+                        saveDownloadHistory()
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun startDownload(
+        url: String,
+        suggestedName: String,
+        type: MediaInterceptor.MediaType,
+        saveToLocker: Boolean,
+        referrerUrl: String? = null,
+        cookies: String? = null,
+        audioUrl: String? = null,
+        sourceOrigin: String? = null
+    ): String {
+        val jobId = UUID.randomUUID().toString()
+        val extension = when (type) {
+            MediaInterceptor.MediaType.AUDIO -> ".mp3"
+            MediaInterceptor.MediaType.WEBM -> ".webm"
+            else -> ".mp4"
+        }
+        val baseName = suggestedName.removeSuffix(".mp4").removeSuffix(".ts").removeSuffix(".mp3").removeSuffix(".webm")
+        val filename = "$baseName$extension"
+        val progressFlow = MutableStateFlow<DownloadProgress>(DownloadProgress.Downloading(0, 0L))
+
+        val job = DownloadJob(
+            id = jobId,
+            filename = filename,
+            url = url,
+            saveToLocker = saveToLocker,
+            progress = progressFlow,
+            referrerUrl = referrerUrl,
+            cookies = cookies,
+            audioUrl = audioUrl,
+            mediaType = type,
+            sourceOrigin = sourceOrigin
+        )
+
+        _jobs.update { it + job }
+        saveDownloadHistory()
+
+        setupNotificationObserver(jobId, filename, progressFlow)
+
+        val jobCoroutine = kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            try {
+                if (!audioUrl.isNullOrEmpty()) {
+                    downloadSplitMux(jobId, url, audioUrl, filename, saveToLocker, referrerUrl, progressFlow, cookies)
+                } else if (type == MediaInterceptor.MediaType.HLS) {
+                    downloadHLS(jobId, url, filename, saveToLocker, referrerUrl, progressFlow, cookies)
+                } else {
+                    downloadDirect(jobId, url, filename, saveToLocker, referrerUrl, progressFlow, cookies)
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Download failed for job $jobId", e)
+                progressFlow.value = DownloadProgress.Error(e.message ?: context.getString(R.string.download_unknown_error))
+            } finally {
+                runningJobs.remove(jobId)
+            }
+        }
+        runningJobs[jobId] = jobCoroutine
+
+        return jobId
+    }
+
+    fun startGenericFileDownload(
+        url: String,
+        filename: String,
+        contentType: String?,
+        saveToLocker: Boolean,
+        cookies: String? = null,
+        referrerUrl: String? = null,
+        sourceOrigin: String? = null
+    ): String {
+        val jobId = UUID.randomUUID().toString()
+        val progressFlow = MutableStateFlow<DownloadProgress>(DownloadProgress.Downloading(0, 0L))
+
+        val job = DownloadJob(
+            id = jobId,
+            filename = filename,
+            url = url,
+            saveToLocker = saveToLocker,
+            progress = progressFlow,
+            isGeneric = true,
+            contentType = contentType,
+            cookies = cookies,
+            referrerUrl = referrerUrl,
+            sourceOrigin = sourceOrigin
+        )
+
+        _jobs.update { it + job }
+        saveDownloadHistory()
+
+        setupNotificationObserver(jobId, filename, progressFlow)
+
+        val jobCoroutine = kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            try {
+                downloadGenericFile(jobId, url, filename, contentType, saveToLocker, progressFlow, cookies, referrerUrl)
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Generic download failed for job $jobId", e)
+                progressFlow.value = DownloadProgress.Error(e.message ?: context.getString(R.string.download_unknown_error))
+            } finally {
+                runningJobs.remove(jobId)
+            }
+        }
+        runningJobs[jobId] = jobCoroutine
+
+        return jobId
+    }
+
+    fun startGenericFileDownloadFromCachedFile(
+        cachedFile: File,
+        filename: String,
+        contentType: String?,
+        saveToLocker: Boolean
+    ): String {
+        val jobId = UUID.randomUUID().toString()
+        val totalBytes = cachedFile.length()
+        val progressFlow = MutableStateFlow<DownloadProgress>(DownloadProgress.Downloading(100, totalBytes))
+
+        val job = DownloadJob(
+            id = jobId,
+            filename = filename,
+            url = cachedFile.name,
+            saveToLocker = saveToLocker,
+            progress = progressFlow,
+            isGeneric = true,
+            contentType = contentType,
+            bytesDownloaded = totalBytes
+        )
+
+        _jobs.update { it + job }
+        saveDownloadHistory()
+        setupNotificationObserver(jobId, filename, progressFlow)
+
+        val jobCoroutine = kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            try {
+                if (saveToLocker) {
+                    progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_encrypting_locker))
+                    val mime = contentType ?: getMimeTypeForFile(filename)
+                    val secureId = privateLockerManager.saveUriToLocker(Uri.fromFile(cachedFile), filename, mime)
+                    cachedFile.delete()
+                    val category = getCategoryForFile(filename)
+                    val finalLockerFile = File(context.filesDir, "locker/$category/$secureId")
+                    progressFlow.value = DownloadProgress.Complete(finalLockerFile, totalBytes)
+                } else {
+                    progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_downloads_folder))
+                    val (savedFile, savedUri) = saveGenericToPublicDownloads(cachedFile, filename, contentType)
+                    cachedFile.delete()
+                    progressFlow.value = DownloadProgress.Complete(savedFile, totalBytes, savedUri)
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Failed to save cached file download", e)
+                progressFlow.value = DownloadProgress.Error(e.message ?: context.getString(R.string.download_unknown_error))
+            } finally {
+                runningJobs.remove(jobId)
+                if (cachedFile.exists()) {
+                    try { cachedFile.delete() } catch (_: Exception) {}
+                }
+            }
+        }
+        runningJobs[jobId] = jobCoroutine
+
+        return jobId
+    }
+
+    fun startGenericFileDownloadFromStream(
+        stream: java.io.InputStream,
+        filename: String,
+        contentType: String?,
+        saveToLocker: Boolean,
+        contentLength: Long? = null,
+        sourceUrl: String? = null
+    ): String {
+        val jobId = UUID.randomUUID().toString()
+        val safeFilename = SecurityPolicy.sanitizeFilename(filename).ifBlank { "download.bin" }
+        val progressFlow = MutableStateFlow<DownloadProgress>(DownloadProgress.Downloading(0, 0L))
+
+        val job = DownloadJob(
+            id = jobId,
+            filename = safeFilename,
+            url = sourceUrl ?: safeFilename,
+            saveToLocker = saveToLocker,
+            progress = progressFlow,
+            isGeneric = true,
+            contentType = contentType
+        )
+
+        _jobs.update { it + job }
+        saveDownloadHistory()
+        setupNotificationObserver(jobId, safeFilename, progressFlow)
+
+        val jobCoroutine = kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            val targetDir = File(context.filesDir, "temp_downloads").apply { mkdirs() }
+            val tempFile = File(targetDir, "${jobId}_$safeFilename")
+            try {
+                val input = BufferedInputStream(stream, 65536)
+                val output = FileOutputStream(tempFile)
+                val buffer = ByteArray(65536)
+                var count = 0
+                var totalBytes = 0L
+
+                while (isActive && input.read(buffer).also { count = it } != -1) {
+                    totalBytes += count
+                    output.write(buffer, 0, count)
+                    val percent = if (contentLength != null && contentLength > 0L) {
+                        ((totalBytes * 100) / contentLength).toInt().coerceIn(0, 99)
+                    } else -1
+                    progressFlow.value = DownloadProgress.Downloading(percent, totalBytes)
+                    _jobs.update { list ->
+                        list.map { if (it.id == jobId) it.copy(bytesDownloaded = totalBytes) else it }
+                    }
+                }
+                output.flush()
+                output.close()
+                input.close()
+
+                if (!isActive) return@launch
+
+                if (saveToLocker) {
+                    progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_encrypting_locker))
+                    val mime = contentType ?: getMimeTypeForFile(safeFilename)
+                    val secureId = privateLockerManager.saveUriToLocker(Uri.fromFile(tempFile), safeFilename, mime)
+                    tempFile.delete()
+                    val category = getCategoryForFile(safeFilename)
+                    val finalLockerFile = File(context.filesDir, "locker/$category/$secureId")
+                    progressFlow.value = DownloadProgress.Complete(finalLockerFile, totalBytes)
+                } else {
+                    progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_downloads_folder))
+                    val (savedFile, savedUri) = saveGenericToPublicDownloads(tempFile, safeFilename, contentType)
+                    tempFile.delete()
+                    progressFlow.value = DownloadProgress.Complete(savedFile, totalBytes, savedUri)
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Streaming download failed for job $jobId", e)
+                progressFlow.value = DownloadProgress.Error(e.message ?: context.getString(R.string.download_unknown_error))
+            } finally {
+                runningJobs.remove(jobId)
+                if (tempFile.exists()) {
+                    try { tempFile.delete() } catch (_: Exception) {}
+                }
+                try { stream.close() } catch (_: Exception) {}
+            }
+        }
+        runningJobs[jobId] = jobCoroutine
+
+        return jobId
+    }
+
+    fun startTorrentDownload(
+        magnetOrTorrentUrl: String,
+        suggestedName: String,
+        saveToLocker: Boolean = false
+    ): String {
+        val jobId = UUID.randomUUID().toString()
+        val safeFilename = SecurityPolicy.sanitizeFilename(suggestedName).ifBlank { "Torrent Download" }
+        val progressFlow = MutableStateFlow<DownloadProgress>(DownloadProgress.Downloading(0, 0L))
+
+        val job = DownloadJob(
+            id = jobId,
+            filename = safeFilename,
+            url = magnetOrTorrentUrl,
+            saveToLocker = saveToLocker,
+            progress = progressFlow,
+            isGeneric = false
+        )
+
+        _jobs.update { it + job }
+        saveDownloadHistory()
+
+        setupNotificationObserver(jobId, safeFilename, progressFlow)
+
+        val jobCoroutine = kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            try {
+                val started = com.devilnihad.nexa.torrent.TorrentEngine.startDownload(magnetOrTorrentUrl, context)
+                if (!started) {
+                    progressFlow.value = DownloadProgress.Error("Failed to start torrent engine")
+                    return@launch
+                }
+
+                val hashMatch = if (magnetOrTorrentUrl.startsWith("magnet:", ignoreCase = true)) {
+                    Regex("""xt=urn:btih:([^&]+)""").find(magnetOrTorrentUrl)?.groupValues?.get(1)?.lowercase()
+                } else null
+
+                com.devilnihad.nexa.torrent.TorrentEngine.activeTorrents.collect { list ->
+                    val torrent = if (hashMatch != null) {
+                        list.find { it.infoHash.equals(hashMatch, ignoreCase = true) }
+                    } else {
+                        list.lastOrNull()
+                    }
+
+                    if (torrent != null) {
+                        if (torrent.isFinished) {
+                            val destFile = com.devilnihad.nexa.torrent.TorrentEngine.firstFile(context, torrent.infoHash)
+                                ?: File(com.devilnihad.nexa.torrent.TorrentEngine.saveDir(context), safeFilename)
+                            progressFlow.value = DownloadProgress.Complete(destFile, torrent.totalDone.coerceAtLeast(torrent.total))
+                        } else if (torrent.errorMessage != null) {
+                            progressFlow.value = DownloadProgress.Error(torrent.errorMessage)
+                        } else if (!torrent.hasMetadata) {
+                            val peerText = if (torrent.numPeers > 0) " (${torrent.numPeers} peers)" else ""
+                            progressFlow.value = DownloadProgress.Muxing("Connecting to swarm & metadata$peerText")
+                        } else {
+                            val pct = (torrent.progress * 100).toInt().coerceIn(0, 99)
+                            progressFlow.value = DownloadProgress.Downloading(pct, torrent.totalDone)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Torrent download error for job $jobId", e)
+                progressFlow.value = DownloadProgress.Error(e.message ?: "Torrent error")
+            } finally {
+                runningJobs.remove(jobId)
+            }
+        }
+        runningJobs[jobId] = jobCoroutine
+
+        return jobId
+    }
+
+    fun retryDownload(jobId: String) {
+        val job = _jobs.value.find { it.id == jobId } ?: return
+        if (runningJobs.containsKey(jobId)) return
+
+        val progressFlow = (job.progress as? MutableStateFlow) ?: MutableStateFlow<DownloadProgress>(DownloadProgress.Downloading(0, 0L))
+        progressFlow.value = DownloadProgress.Downloading(0, job.bytesDownloaded)
+
+        setupNotificationObserver(jobId, job.filename, progressFlow)
+
+        val jobCoroutine = kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            try {
+                if (job.isGeneric) {
+                    downloadGenericFile(job.id, job.url, job.filename, job.contentType, job.saveToLocker, progressFlow, job.cookies, job.referrerUrl)
+                } else if (!job.audioUrl.isNullOrEmpty()) {
+                    downloadSplitMux(job.id, job.url, job.audioUrl, job.filename, job.saveToLocker, job.referrerUrl, progressFlow, job.cookies)
+                } else if (job.mediaType == MediaInterceptor.MediaType.HLS) {
+                    downloadHLS(job.id, job.url, job.filename, job.saveToLocker, job.referrerUrl, progressFlow, job.cookies)
+                } else {
+                    downloadDirect(job.id, job.url, job.filename, job.saveToLocker, job.referrerUrl, progressFlow, job.cookies)
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Retry download failed for job $jobId", e)
+                progressFlow.value = DownloadProgress.Error(e.message ?: context.getString(R.string.download_unknown_error))
+            } finally {
+                runningJobs.remove(jobId)
+            }
+        }
+        runningJobs[jobId] = jobCoroutine
+    }
+
+    fun pauseDownload(jobId: String) {
+        val job = _jobs.value.find { it.id == jobId } ?: return
+        runningJobs[jobId]?.cancel()
+        runningJobs.remove(jobId)
+        (job.progress as? MutableStateFlow)?.value = DownloadProgress.Error(context.getString(R.string.download_paused))
+        saveDownloadHistory()
+    }
+
+    fun resumeDownload(jobId: String) {
+        retryDownload(jobId)
+    }
+
+    private suspend fun downloadGenericFile(
+        jobId: String,
+        urlStr: String,
+        filename: String,
+        contentType: String?,
+        saveToLocker: Boolean,
+        progressFlow: MutableStateFlow<DownloadProgress>,
+        cookies: String?,
+        referrerUrl: String?
+    ) = withContext(Dispatchers.IO) {
+        val safeFilename = SecurityPolicy.sanitizeFilename(filename)
+        val targetDir = File(context.filesDir, "temp_downloads").apply { mkdirs() }
+        val targetFile = File(targetDir, safeFilename)
+
+        var existingBytes = if (targetFile.exists()) targetFile.length() else 0L
+
+        try {
+            val headers = mutableMapOf<String, String>()
+            if (!referrerUrl.isNullOrEmpty()) {
+                headers["Referer"] = referrerUrl
+            }
+            headers["User-Agent"] = "Mozilla/5.0 (Android 14; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0"
+            headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf,application/octet-stream,*/*;q=0.8"
+            headers["Accept-Language"] = "en-US,en;q=0.9"
+            headers["Sec-Fetch-Dest"] = "document"
+            headers["Sec-Fetch-Mode"] = "navigate"
+            headers["Sec-Fetch-Site"] = "cross-site"
+            headers["Upgrade-Insecure-Requests"] = "1"
+            if (!cookies.isNullOrEmpty()) {
+                headers["Cookie"] = cookies
+            }
+            if (existingBytes > 0L) {
+                headers["Range"] = "bytes=$existingBytes-"
+            }
+
+            var connection = openConnectionWithRedirects(urlStr, headers)
+
+            if (connection.responseCode == 416 && existingBytes > 0L) {
+                targetFile.delete()
+                existingBytes = 0L
+                headers.remove("Range")
+                connection.disconnect()
+                connection = openConnectionWithRedirects(urlStr, headers)
+            }
+
+            if (connection.responseCode !in 200..299) {
+                progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_server_code_error, connection.responseCode))
+                connection.disconnect()
+                return@withContext
+            }
+
+            val isPartial = connection.responseCode == 206
+            val appendMode = isPartial && existingBytes > 0L
+            val totalLength = if (isPartial) {
+                val cl = connection.contentLengthLong
+                if (cl > 0) existingBytes + cl else -1L
+            } else {
+                connection.contentLengthLong
+            }
+
+            val acceptsRanges = isPartial || (connection.getHeaderField("Accept-Ranges")?.contains("bytes", ignoreCase = true) == true)
+            _jobs.update { list ->
+                list.map { if (it.id == jobId) it.copy(canResume = acceptsRanges) else it }
+            }
+
+            val input = BufferedInputStream(connection.inputStream, 65536)
+            val output = FileOutputStream(targetFile, appendMode)
+
+            val buffer = ByteArray(65536)
+            var count = 0
+            var totalBytes = if (appendMode) existingBytes else 0L
+
+            while (isActive && input.read(buffer).also { count = it } != -1) {
+                totalBytes += count
+                output.write(buffer, 0, count)
+                val percent = if (totalLength > 0) ((totalBytes * 100) / totalLength).toInt() else -1
+                progressFlow.value = DownloadProgress.Downloading(percent, totalBytes)
+                _jobs.update { list ->
+                    list.map { if (it.id == jobId) it.copy(bytesDownloaded = totalBytes) else it }
+                }
+            }
+
+            output.flush()
+            output.close()
+            input.close()
+            connection.disconnect()
+
+            if (!isActive) {
+                return@withContext
+            }
+
+            if (saveToLocker) {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_encrypting_locker))
+                val mime = contentType ?: getMimeTypeForFile(filename)
+                val secureId = privateLockerManager.saveUriToLocker(Uri.fromFile(targetFile), filename, mime)
+                targetFile.delete()
+                val category = getCategoryForFile(filename)
+                val finalLockerFile = File(context.filesDir, "locker/$category/$secureId")
+                progressFlow.value = DownloadProgress.Complete(finalLockerFile, totalBytes)
+            } else {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_downloads_folder))
+                val (savedFile, savedUri) = saveGenericToPublicDownloads(targetFile, filename, contentType)
+                targetFile.delete()
+                progressFlow.value = DownloadProgress.Complete(savedFile, totalBytes, savedUri)
+            }
+        } finally {
+            val job = _jobs.value.find { it.id == jobId }
+            if (progressFlow.value !is DownloadProgress.Complete && targetFile.exists() && (job?.canResume != true)) {
+                targetFile.delete()
+            }
+        }
+    }
+
+    /**
+     * Saves a temp file to the PUBLIC Downloads folder so it appears in the system Files app.
+     * Android 10+: uses MediaStore.Downloads (no WRITE_EXTERNAL_STORAGE needed).
+     * Android 9-: writes directly to Environment.getExternalStoragePublicDirectory(DOWNLOADS).
+     *
+     * Returns Pair(File, Uri?) — Uri is the MediaStore content:// URI on Android 10+,
+     * which should be used for opening the file rather than FileProvider.
+     */
+    private fun saveGenericToPublicDownloads(
+        tempFile: File,
+        filename: String,
+        contentType: String?
+    ): Pair<File, Uri?> {
+        val safeFilename = SecurityPolicy.sanitizeFilename(filename)
+        val ext = safeFilename.substringAfterLast('.', "").lowercase()
+        val mime = contentType?.takeIf { it.isNotBlank() }
+            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+            ?: getMimeTypeForFile(safeFilename)
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10+: Insert into MediaStore.Downloads
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, safeFilename)
+                put(MediaStore.Downloads.MIME_TYPE, mime)
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val resolver = context.contentResolver
+            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            val itemUri = resolver.insert(collection, values)
+                ?: throw Exception("MediaStore insert returned null for $filename")
+
+            resolver.openOutputStream(itemUri)?.use { out ->
+                tempFile.inputStream().use { it.copyTo(out) }
+            }
+
+            // Mark as ready
+            values.clear()
+            values.put(MediaStore.Downloads.IS_PENDING, 0)
+            resolver.update(itemUri, values, null, null)
+
+            // Return a dummy File (for display) + the real MediaStore URI
+            Pair(tempFile, itemUri)
+        } else {
+            // Android 9 and below: write directly to public Downloads dir
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            downloadsDir.mkdirs()
+            var destFile = File(downloadsDir, safeFilename)
+            var counter = 1
+            while (destFile.exists()) {
+                val nameWithoutExt = safeFilename.substringBeforeLast('.')
+                val extension = safeFilename.substringAfterLast('.', "")
+                destFile = if (extension.isNotEmpty())
+                    File(downloadsDir, "${nameWithoutExt}($counter).$extension")
+                else
+                    File(downloadsDir, "$nameWithoutExt($counter)")
+                counter++
+            }
+            tempFile.copyTo(destFile, overwrite = true)
+            Pair(destFile, Uri.fromFile(destFile))
+        }
+    }
+
+    private suspend fun downloadDirect(
+        jobId: String,
+        urlStr: String,
+        filename: String,
+        saveToLocker: Boolean,
+        referrerUrl: String?,
+        progressFlow: MutableStateFlow<DownloadProgress>,
+        cookies: String?
+    ) = withContext(Dispatchers.IO) {
+        val safeFilename = SecurityPolicy.sanitizeFilename(filename)
+        val targetDir = File(context.filesDir, "temp_downloads").apply { mkdirs() }
+        val targetFile = File(targetDir, safeFilename)
+
+        var existingBytes = if (targetFile.exists()) targetFile.length() else 0L
+
+        try {
+            val headers = mutableMapOf<String, String>()
+            if (!referrerUrl.isNullOrEmpty()) {
+                headers["Referer"] = referrerUrl
+            }
+            headers["User-Agent"] = "Mozilla/5.0 (Android 14; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0"
+            headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf,application/octet-stream,*/*;q=0.8"
+            headers["Accept-Language"] = "en-US,en;q=0.9"
+            headers["Sec-Fetch-Dest"] = "document"
+            headers["Sec-Fetch-Mode"] = "navigate"
+            headers["Sec-Fetch-Site"] = "cross-site"
+            headers["Upgrade-Insecure-Requests"] = "1"
+            if (!cookies.isNullOrEmpty()) {
+                headers["Cookie"] = cookies
+            }
+            if (existingBytes > 0L) {
+                headers["Range"] = "bytes=$existingBytes-"
+            }
+
+            var connection = openConnectionWithRedirects(urlStr, headers)
+
+            if (connection.responseCode == 416 && existingBytes > 0L) {
+                targetFile.delete()
+                existingBytes = 0L
+                headers.remove("Range")
+                connection.disconnect()
+                connection = openConnectionWithRedirects(urlStr, headers)
+            }
+
+            if (connection.responseCode !in 200..299) {
+                progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_server_code_error, connection.responseCode))
+                connection.disconnect()
+                return@withContext
+            }
+
+            val isPartial = connection.responseCode == 206
+            val appendMode = isPartial && existingBytes > 0L
+            val totalLength = if (isPartial) {
+                val cl = connection.contentLengthLong
+                if (cl > 0) existingBytes + cl else -1L
+            } else {
+                connection.contentLengthLong
+            }
+
+            val acceptsRanges = isPartial || (connection.getHeaderField("Accept-Ranges")?.contains("bytes", ignoreCase = true) == true)
+            _jobs.update { list ->
+                list.map { if (it.id == jobId) it.copy(canResume = acceptsRanges) else it }
+            }
+
+            val input = BufferedInputStream(connection.inputStream, 65536)
+            val output = FileOutputStream(targetFile, appendMode)
+
+            val buffer = ByteArray(65536)
+            var count = 0
+            var totalBytes = if (appendMode) existingBytes else 0L
+
+            while (isActive && input.read(buffer).also { count = it } != -1) {
+                totalBytes += count
+                output.write(buffer, 0, count)
+                
+                val percent = if (totalLength > 0) ((totalBytes * 100) / totalLength).toInt() else -1
+                progressFlow.value = DownloadProgress.Downloading(percent, totalBytes)
+                _jobs.update { list ->
+                    list.map { if (it.id == jobId) it.copy(bytesDownloaded = totalBytes) else it }
+                }
+            }
+
+            output.flush()
+            output.close()
+            input.close()
+            connection.disconnect()
+
+            if (!isActive) {
+                return@withContext
+            }
+
+            if (saveToLocker) {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_encrypting_locker))
+                val mimeType = getMimeTypeForFile(filename)
+                val secureId = privateLockerManager.saveUriToLocker(Uri.fromFile(targetFile), filename, mimeType)
+                targetFile.delete()
+                val category = getCategoryForFile(filename)
+                val finalLockerFile = File(context.filesDir, "locker/$category/$secureId")
+                progressFlow.value = DownloadProgress.Complete(finalLockerFile, totalBytes)
+            } else {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_public_downloads))
+                val savedFile = saveToPublicDownloads(targetFile, filename)
+                progressFlow.value = DownloadProgress.Complete(savedFile, totalBytes)
+            }
+        } finally {
+            val job = _jobs.value.find { it.id == jobId }
+            if (progressFlow.value !is DownloadProgress.Complete && targetFile.exists() && (job?.canResume != true)) {
+                targetFile.delete()
+            }
+        }
+    }
+
+    private suspend fun downloadSplitMux(
+        jobId: String,
+        videoUrl: String,
+        audioUrl: String,
+        filename: String,
+        saveToLocker: Boolean,
+        referrerUrl: String?,
+        progressFlow: MutableStateFlow<DownloadProgress>,
+        cookies: String?
+    ) = withContext(Dispatchers.IO) {
+        val targetDir = File(context.filesDir, "temp_downloads").apply { mkdirs() }
+        val finalOutFile = File(targetDir, filename)
+        if (finalOutFile.exists()) finalOutFile.delete()
+
+        val tempVideoFile = File(targetDir, "temp_video_${jobId}.mp4")
+        val tempAudioFile = File(targetDir, "temp_audio_${jobId}.m4a")
+
+        if (tempVideoFile.exists()) tempVideoFile.delete()
+        if (tempAudioFile.exists()) tempAudioFile.delete()
+
+        try {
+            val headers = mutableMapOf<String, String>()
+            if (!referrerUrl.isNullOrEmpty()) {
+                headers["Referer"] = referrerUrl
+            }
+            headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+            if (!cookies.isNullOrEmpty()) {
+                headers["Cookie"] = cookies
+            }
+
+            // 1. Download Video
+            progressFlow.value = DownloadProgress.Downloading(0, 0L)
+            Log.i("DownloadEngine", "Downloading split video track for job $jobId...")
+            
+            var videoBytes = 0L
+            var audioBytes = 0L
+            
+            val videoConn = openConnectionWithRedirects(videoUrl, headers)
+            if (videoConn.responseCode !in 200..299) {
+                progressFlow.value = DownloadProgress.Error("Video track HTTP ${videoConn.responseCode}")
+                videoConn.disconnect()
+                return@withContext
+            }
+            val videoLength = videoConn.contentLengthLong
+            val videoInput = BufferedInputStream(videoConn.inputStream, 65536)
+            val videoOutput = FileOutputStream(tempVideoFile)
+            val buffer = ByteArray(65536)
+            var count = 0
+            while (isActive && videoInput.read(buffer).also { count = it } != -1) {
+                videoOutput.write(buffer, 0, count)
+                videoBytes += count
+                val percent = if (videoLength > 0) ((videoBytes * 50) / videoLength).toInt() else 25
+                progressFlow.value = DownloadProgress.Downloading(percent, videoBytes)
+            }
+            videoOutput.flush()
+            videoOutput.close()
+            videoInput.close()
+            videoConn.disconnect()
+
+            if (!isActive) return@withContext
+
+            // 2. Download Audio
+            progressFlow.value = DownloadProgress.Downloading(50, videoBytes)
+            Log.i("DownloadEngine", "Downloading split audio track for job $jobId...")
+
+            val audioConn = openConnectionWithRedirects(audioUrl, headers)
+            if (audioConn.responseCode !in 200..299) {
+                progressFlow.value = DownloadProgress.Error("Audio track HTTP ${audioConn.responseCode}")
+                audioConn.disconnect()
+                return@withContext
+            }
+            val audioLength = audioConn.contentLengthLong
+            val audioInput = BufferedInputStream(audioConn.inputStream, 65536)
+            val audioOutput = FileOutputStream(tempAudioFile)
+            while (isActive && audioInput.read(buffer).also { count = it } != -1) {
+                audioOutput.write(buffer, 0, count)
+                audioBytes += count
+                val percent = 50 + (if (audioLength > 0) ((audioBytes * 50) / audioLength).toInt() else 25)
+                progressFlow.value = DownloadProgress.Downloading(percent, videoBytes + audioBytes)
+            }
+            audioOutput.flush()
+            audioOutput.close()
+            audioInput.close()
+            audioConn.disconnect()
+
+            if (!isActive) return@withContext
+
+            // 3. Mux/Merge using FFmpeg
+            progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_merging_av))
+            Log.i("DownloadEngine", "Muxing split tracks using FFmpeg...")
+            
+            var muxSuccess = false
+            if (ffmpegBridge.isNativeActive()) {
+                val result = ffmpegBridge.execute(
+                    "-y",
+                    "-i", tempVideoFile.absolutePath,
+                    "-i", tempAudioFile.absolutePath,
+                    "-c", "copy",
+                    finalOutFile.absolutePath
+                )
+                if (result == 0) {
+                    muxSuccess = true
+                } else {
+                    Log.e("DownloadEngine", "FFmpeg JNI muxing failed with code $result")
+                }
+            } else {
+                Log.e("DownloadEngine", "FFmpeg JNI not active, attempting native MediaMuxer...")
+            }
+
+            if (!muxSuccess) {
+                try {
+                    muxSuccess = androidMediaMuxerMerge(tempVideoFile, tempAudioFile, finalOutFile)
+                } catch (e: Exception) {
+                    Log.e("DownloadEngine", "Android MediaMuxer fallback failed", e)
+                }
+            }
+
+            if (!muxSuccess) {
+                progressFlow.value = DownloadProgress.Error("Muxing video and audio tracks failed")
+                return@withContext
+            }
+
+            // 4. Save/Encrypt complete file
+            val totalBytes = finalOutFile.length()
+            if (saveToLocker) {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_encrypting_locker))
+                val mimeType = getMimeTypeForFile(filename)
+                val secureId = privateLockerManager.saveUriToLocker(Uri.fromFile(finalOutFile), filename, mimeType)
+                finalOutFile.delete()
+                val category = getCategoryForFile(filename)
+                val finalLockerFile = File(context.filesDir, "locker/$category/$secureId")
+                progressFlow.value = DownloadProgress.Complete(finalLockerFile, totalBytes)
+            } else {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_public_downloads))
+                val savedFile = saveToPublicDownloads(finalOutFile, filename)
+                progressFlow.value = DownloadProgress.Complete(savedFile, totalBytes)
+            }
+
+        } finally {
+            if (tempVideoFile.exists()) tempVideoFile.delete()
+            if (tempAudioFile.exists()) tempAudioFile.delete()
+            if (progressFlow.value !is DownloadProgress.Complete && finalOutFile.exists()) {
+                finalOutFile.delete()
+            }
+        }
+    }
+
+    private fun androidMediaMuxerMerge(videoFile: File, audioFile: File, outputFile: File): Boolean {
+        var videoExtractor: android.media.MediaExtractor? = null
+        var audioExtractor: android.media.MediaExtractor? = null
+        var muxer: android.media.MediaMuxer? = null
+        try {
+            videoExtractor = android.media.MediaExtractor().apply { setDataSource(videoFile.absolutePath) }
+            audioExtractor = android.media.MediaExtractor().apply { setDataSource(audioFile.absolutePath) }
+
+            muxer = android.media.MediaMuxer(outputFile.absolutePath, android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+
+            var videoTrackIndex = -1
+            for (i in 0 until videoExtractor.trackCount) {
+                val format = videoExtractor.getTrackFormat(i)
+                val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: ""
+                if (mime.startsWith("video/")) {
+                    videoExtractor.selectTrack(i)
+                    videoTrackIndex = muxer.addTrack(format)
+                    break
+                }
+            }
+
+            var audioTrackIndex = -1
+            for (i in 0 until audioExtractor.trackCount) {
+                val format = audioExtractor.getTrackFormat(i)
+                val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: ""
+                if (mime.startsWith("audio/")) {
+                    audioExtractor.selectTrack(i)
+                    audioTrackIndex = muxer.addTrack(format)
+                    break
+                }
+            }
+
+            if (videoTrackIndex == -1 && audioTrackIndex == -1) {
+                Log.e("DownloadEngine", "No video or audio tracks found to mux")
+                return false
+            }
+
+            muxer.start()
+
+            val buffer = java.nio.ByteBuffer.allocate(1024 * 1024)
+            val bufferInfo = android.media.MediaCodec.BufferInfo()
+
+            if (videoTrackIndex != -1) {
+                while (true) {
+                    bufferInfo.size = videoExtractor.readSampleData(buffer, 0)
+                    if (bufferInfo.size < 0) {
+                        break
+                    }
+                    bufferInfo.presentationTimeUs = videoExtractor.sampleTime
+                    bufferInfo.flags = videoExtractor.sampleFlags
+                    muxer.writeSampleData(videoTrackIndex, buffer, bufferInfo)
+                    videoExtractor.advance()
+                }
+            }
+
+            if (audioTrackIndex != -1) {
+                while (true) {
+                    bufferInfo.size = audioExtractor.readSampleData(buffer, 0)
+                    if (bufferInfo.size < 0) {
+                        break
+                    }
+                    bufferInfo.presentationTimeUs = audioExtractor.sampleTime
+                    bufferInfo.flags = audioExtractor.sampleFlags
+                    muxer.writeSampleData(audioTrackIndex, buffer, bufferInfo)
+                    audioExtractor.advance()
+                }
+            }
+
+            muxer.stop()
+            Log.i("DownloadEngine", "Android MediaMuxer successfully merged video and audio.")
+            return true
+        } catch (e: Exception) {
+            Log.e("DownloadEngine", "MediaMuxer merging failed", e)
+            return false
+        } finally {
+            videoExtractor?.release()
+            audioExtractor?.release()
+            try { muxer?.release() } catch(e: Exception) {}
+        }
+    }
+
+    private suspend fun downloadHLS(
+        jobId: String,
+        manifestUrl: String,
+        filename: String,
+        saveToLocker: Boolean,
+        referrerUrl: String?,
+        progressFlow: MutableStateFlow<DownloadProgress>,
+        cookies: String?
+    ) = withContext(Dispatchers.IO) {
+        val targetDir = File(context.filesDir, "temp_downloads").apply { mkdirs() }
+        val finalOutFile = File(targetDir, filename)
+        if (finalOutFile.exists()) finalOutFile.delete()
+
+        var success = false
+        if (ffmpegBridge.isNativeActive()) {
+            progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_ffmpeg))
+            val argsList = mutableListOf<String>()
+            
+            if (!referrerUrl.isNullOrEmpty() || !cookies.isNullOrEmpty()) {
+                argsList.add("-headers")
+                val headersSb = StringBuilder()
+                headersSb.append("User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36\r\n")
+                if (!referrerUrl.isNullOrEmpty()) {
+                    headersSb.append("Referer: $referrerUrl\r\n")
+                }
+                if (!cookies.isNullOrEmpty()) {
+                    headersSb.append("Cookie: $cookies\r\n")
+                }
+                argsList.add(headersSb.toString())
+            }
+            
+            argsList.add("-i")
+            argsList.add(manifestUrl)
+            argsList.add("-c")
+            argsList.add("copy")
+            argsList.add(finalOutFile.absolutePath)
+            
+            val result = ffmpegBridge.execute(*argsList.toTypedArray())
+            if (result == 0) {
+                success = true
+            } else {
+                Log.e("DownloadEngine", "Native FFmpeg direct HLS download failed (Code $result). Falling back to segment downloader.")
+            }
+        }
+
+        if (!success) {
+            progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_fetching_hls))
+            
+            var resolvedUrl = manifestUrl
+            var m3u8Content = fetchTextUrl(resolvedUrl, referrerUrl, cookies)
+            
+            if (m3u8Content.isEmpty()) {
+                progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_error_empty_manifest))
+                return@withContext
+            }
+
+            if (m3u8Content.contains("#EXT-X-STREAM-INF")) {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_resolving_hls_master))
+                val variants = parseM3U8MasterPlaylist(resolvedUrl, m3u8Content)
+                if (variants.isNotEmpty()) {
+                    resolvedUrl = variants.first().first
+                    m3u8Content = fetchTextUrl(resolvedUrl, referrerUrl, cookies)
+                    if (m3u8Content.isEmpty()) {
+                        progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_error_variant_playlist))
+                        return@withContext
+                    }
+                }
+            }
+
+            val segmentUrls = parseM3U8Segments(resolvedUrl, m3u8Content)
+            if (segmentUrls.isEmpty()) {
+                progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_error_no_hls_segments))
+                return@withContext
+            }
+
+            val keyInfo = parseEncryptionKeyInfo(resolvedUrl, m3u8Content)
+            val keyBytes = keyInfo?.let { fetchKeyBytes(it.uri, referrerUrl, cookies) }
+
+            val tempDir = File(context.cacheDir, "hls_${UUID.randomUUID()}").apply { mkdirs() }
+            
+            try {
+                val totalSegments = segmentUrls.size
+                val downloadedCount = AtomicInteger(0)
+                var totalBytes = 0L
+
+                progressFlow.value = DownloadProgress.Downloading(0, 0L)
+
+                val semaphore = Semaphore(5)
+                val jobs = segmentUrls.mapIndexed { index, segUrl ->
+                    this@withContext.launch {
+                        semaphore.withPermit {
+                            var attempt = 0
+                            var segSuccess = false
+                            var bytes = 0L
+                            val segmentFile = File(tempDir, "seg-$index.ts")
+                            while (attempt < 3 && !segSuccess && isActive) {
+                                try {
+                                    attempt++
+                                    bytes = downloadSegmentFile(
+                                        segUrl, 
+                                        segmentFile, 
+                                        keyInfo, 
+                                        keyBytes, 
+                                        index, 
+                                        referrerUrl,
+                                        cookies
+                                    ) { !isActive }
+                                    segSuccess = true
+                                } catch (ce: kotlinx.coroutines.CancellationException) {
+                                    throw ce
+                                } catch (e: Exception) {
+                                    Log.w("DownloadEngine", "Attempt $attempt failed for segment $index", e)
+                                    if (attempt < 3 && isActive) {
+                                        delay(1000)
+                                    }
+                                }
+                            }
+                            if (segSuccess) {
+                                totalBytes += bytes
+                                val downloaded = downloadedCount.incrementAndGet()
+                                val percent = (downloaded * 100) / totalSegments
+                                progressFlow.value = DownloadProgress.Downloading(percent, totalBytes)
+                            } else if (isActive) {
+                                throw Exception("Failed downloading segment $index after 3 attempts")
+                            }
+                        }
+                    }
+                }
+                
+                jobs.forEach { it.join() }
+
+                if (!isActive) {
+                    return@withContext
+                }
+
+                if (downloadedCount.get() < totalSegments) {
+                    progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_error_hls_chunks, downloadedCount.get(), totalSegments))
+                    return@withContext
+                }
+
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_stitching_hls))
+                
+                val tempStitchedTs = File(tempDir, "temp_stitched.ts")
+                if (tempStitchedTs.exists()) tempStitchedTs.delete()
+
+                val segments = tempDir.listFiles { _, name -> name.endsWith(".ts") || name.contains("seg-") }
+                    ?.sortedWith { f1, f2 ->
+                        val num1 = f1.name.filter { it.isDigit() }.toIntOrNull() ?: 0
+                        val num2 = f2.name.filter { it.isDigit() }.toIntOrNull() ?: 0
+                        num1.compareTo(num2)
+                    } ?: emptyList()
+
+                if (segments.isEmpty()) {
+                    progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_error_no_segments_to_stitch))
+                    return@withContext
+                }
+
+                FileOutputStream(tempStitchedTs).use { outputStream ->
+                    segments.forEachIndexed { index, segment ->
+                        if (!isActive) return@withContext
+                        java.io.FileInputStream(segment).use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                        val percent = ((index + 1) * 100) / segments.size
+                        progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_stitching_percent, percent))
+                    }
+                }
+
+                if (!isActive) {
+                    return@withContext
+                }
+
+                var finalSuccess = false
+                if (ffmpegBridge.isNativeActive()) {
+                    progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_remuxing_mp4))
+                    val result = ffmpegBridge.execute("-i", tempStitchedTs.absolutePath, "-c", "copy", finalOutFile.absolutePath)
+                    if (result == 0) {
+                        finalSuccess = true
+                    }
+                }
+
+                if (!finalSuccess) {
+                    if (!isActive) return@withContext
+                    progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_converting_hls_mp4))
+                    finalSuccess = remuxTsToMp4(tempStitchedTs, finalOutFile)
+                }
+
+                if (finalSuccess) {
+                    success = true
+                } else {
+                    if (!isActive) return@withContext
+                    progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_raw_ts))
+                    val tsFilename = filename.removeSuffix(".mp4") + ".ts"
+                    val finalOutTsFile = File(targetDir, tsFilename)
+                    if (finalOutTsFile.exists()) finalOutTsFile.delete()
+                    
+                    try {
+                        tempStitchedTs.copyTo(finalOutTsFile, overwrite = true)
+                        
+                        _jobs.update { list ->
+                            list.map { if (it.id == jobId) it.copy(filename = tsFilename) else it }
+                        }
+                        saveDownloadHistory()
+                        
+                        if (saveToLocker) {
+                            progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_encrypting_locker))
+                            val secureId = privateLockerManager.saveUriToLocker(Uri.fromFile(finalOutTsFile), tsFilename, "video/mp2t")
+                            finalOutTsFile.delete()
+                            val category = getCategoryForFile(tsFilename)
+                            val finalLockerFile = File(context.filesDir, "locker/$category/$secureId")
+                            progressFlow.value = DownloadProgress.Complete(finalLockerFile, finalLockerFile.length())
+                        } else {
+                            progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_public_downloads))
+                            val savedFile = saveToPublicDownloads(finalOutTsFile, tsFilename)
+                            progressFlow.value = DownloadProgress.Complete(savedFile, savedFile.length())
+                        }
+                        return@withContext
+                    } catch (e: Exception) {
+                        Log.e("DownloadEngine", "Failed to copy fallback TS file", e)
+                        progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_error_stitching_conversion))
+                        return@withContext
+                    }
+                }
+            } finally {
+                tempDir.deleteRecursively()
+            }
+        }
+
+        if (success) {
+            if (saveToLocker) {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_encrypting_locker))
+                val mimeType = getMimeTypeForFile(filename)
+                val secureId = privateLockerManager.saveUriToLocker(Uri.fromFile(finalOutFile), filename, mimeType)
+                finalOutFile.delete()
+                val category = getCategoryForFile(filename)
+                val finalLockerFile = File(context.filesDir, "locker/$category/$secureId")
+                progressFlow.value = DownloadProgress.Complete(finalLockerFile, finalLockerFile.length())
+            } else {
+                progressFlow.value = DownloadProgress.Muxing(context.getString(R.string.download_progress_saving_public_downloads))
+                val savedFile = saveToPublicDownloads(finalOutFile, filename)
+                progressFlow.value = DownloadProgress.Complete(savedFile, savedFile.length())
+            }
+        } else {
+            progressFlow.value = DownloadProgress.Error(context.getString(R.string.download_error_stitching_conversion))
+        }
+    }
+
+    private fun openConnectionWithRedirects(
+        urlStr: String,
+        headers: Map<String, String>,
+        maxRedirects: Int = 5
+    ): HttpURLConnection {
+        var currentUrl = urlStr
+        var redirects = 0
+        var conn: HttpURLConnection? = null
+        val currentHeaders = headers.toMutableMap()
+        while (redirects < maxRedirects) {
+            val url = URL(currentUrl)
+            val currentConn = url.openConnection() as HttpURLConnection
+            currentConn.instanceFollowRedirects = false // Manual handling to support protocol changes (http <-> https)
+            currentConn.connectTimeout = 15000
+            currentConn.readTimeout = 30000
+            
+            // Set headers
+            currentHeaders.forEach { (key, value) ->
+                currentConn.setRequestProperty(key, value)
+            }
+            
+            currentConn.connect()
+            
+            val status = currentConn.responseCode
+            if (status == HttpURLConnection.HTTP_MOVED_TEMP ||
+                status == HttpURLConnection.HTTP_MOVED_PERM ||
+                status == HttpURLConnection.HTTP_SEE_OTHER ||
+                status == 307 || status == 308
+            ) {
+                val setCookie = currentConn.getHeaderField("Set-Cookie")
+                val cookieVal = setCookie?.substringBefore(";")?.trim()
+                if (!cookieVal.isNullOrBlank()) {
+                    val existing = currentHeaders["Cookie"]
+                    currentHeaders["Cookie"] = if (existing.isNullOrBlank()) cookieVal else "$existing; $cookieVal"
+                }
+
+                var newUrl = currentConn.getHeaderField("Location")
+                currentConn.disconnect()
+                if (newUrl != null) {
+                    // Handle relative redirect URLs
+                    if (!newUrl.startsWith("http://") && !newUrl.startsWith("https://")) {
+                        val base = URL(currentUrl)
+                        newUrl = URL(base, newUrl).toString()
+                    }
+                    currentUrl = newUrl
+                    redirects++
+                } else {
+                    conn = currentConn
+                    break
+                }
+            } else {
+                conn = currentConn
+                break
+            }
+        }
+        
+        if (conn == null) {
+            val url = URL(currentUrl)
+            val finalConn = url.openConnection() as HttpURLConnection
+            currentHeaders.forEach { (key, value) ->
+                finalConn.setRequestProperty(key, value)
+            }
+            finalConn.connect()
+            conn = finalConn
+        }
+        
+        return conn
+    }
+
+    private fun fetchTextUrl(urlStr: String, referrerUrl: String? = null, cookies: String? = null): String {
+        return try {
+            val headers = mutableMapOf<String, String>()
+            if (!referrerUrl.isNullOrEmpty()) {
+                headers["Referer"] = referrerUrl
+            }
+            headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+            if (!cookies.isNullOrEmpty()) {
+                headers["Cookie"] = cookies
+            }
+            val connection = openConnectionWithRedirects(urlStr, headers)
+            val result = if (connection.responseCode in 200..299) {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                ""
+            }
+            connection.disconnect()
+            result
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    private fun parseM3U8Segments(baseManifestUrl: String, content: String): List<String> {
+        val list = mutableListOf<String>()
+        val baseUri = baseManifestUrl.substring(0, baseManifestUrl.lastIndexOf("/") + 1)
+        
+        content.lines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+                val fullUrl = if (trimmed.startsWith("http")) {
+                    trimmed
+                } else {
+                    "$baseUri$trimmed"
+                }
+                list.add(fullUrl)
+            }
+        }
+        return list
+    }
+
+    private fun downloadSegmentFile(
+        urlStr: String,
+        file: File,
+        keyInfo: EncryptionKeyInfo?,
+        keyBytes: ByteArray?,
+        segmentIndex: Int,
+        referrerUrl: String?,
+        cookies: String?,
+        isCancelled: () -> Boolean
+    ): Long {
+        val headers = mutableMapOf<String, String>()
+        if (!referrerUrl.isNullOrEmpty()) {
+            headers["Referer"] = referrerUrl
+        }
+        headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+        if (!cookies.isNullOrEmpty()) {
+            headers["Cookie"] = cookies
+        }
+        val connection = openConnectionWithRedirects(urlStr, headers)
+        if (connection.responseCode !in 200..299) {
+            connection.disconnect()
+            throw Exception("Segment server returned code ${connection.responseCode}")
+        }
+        
+        val rawBytes = try {
+            connection.inputStream.use { input ->
+                input.readBytes()
+            }
+        } catch (oom: OutOfMemoryError) {
+            Log.e("DownloadEngine", "OOM reading HLS segment $segmentIndex — skipping", oom)
+            connection.disconnect()
+            return 0L
+        }
+        connection.disconnect()
+        
+        if (isCancelled()) {
+            throw kotlinx.coroutines.CancellationException("Download cancelled")
+        }
+        
+        val decryptedBytes = if (keyInfo != null && keyBytes != null) {
+            decryptAes128(rawBytes, keyBytes, keyInfo.iv ?: getSequenceIv(segmentIndex))
+        } else {
+            rawBytes
+        }
+        
+        FileOutputStream(file).use { output ->
+            output.write(decryptedBytes)
+        }
+        return decryptedBytes.size.toLong()
+    }
+
+    private fun getMimeTypeForFile(filename: String): String {
+        val ext = filename.substringAfterLast('.', "").lowercase()
+        return when (ext) {
+            "apk", "apks", "xapk" -> "application/vnd.android.package-archive"
+            "torrent" -> "application/x-bittorrent"
+            "pdf" -> "application/pdf"
+            "zip" -> "application/zip"
+            "7z" -> "application/x-7z-compressed"
+            "rar" -> "application/x-rar-compressed"
+            "tar" -> "application/x-tar"
+            "gz" -> "application/gzip"
+            "deb" -> "application/vnd.debian.binary-package"
+            "rpm" -> "application/x-redhat-package-manager"
+            "jar" -> "application/java-archive"
+            "mp3" -> "audio/mpeg"
+            "m4a" -> "audio/mp4"
+            "wav" -> "audio/wav"
+            "flac" -> "audio/flac"
+            "ogg" -> "audio/ogg"
+            "aac" -> "audio/aac"
+            "opus" -> "audio/opus"
+            "wma" -> "audio/x-ms-wma"
+            "mp4" -> "video/mp4"
+            "webm" -> "video/webm"
+            "mkv" -> "video/x-matroska"
+            "avi" -> "video/x-msvideo"
+            "mov" -> "video/quicktime"
+            "flv" -> "video/x-flv"
+            "ts" -> "video/mp2t"
+            "3gp" -> "video/3gpp"
+            "wmv" -> "video/x-ms-wmv"
+            "m4v" -> "video/mp4"
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            "svg" -> "image/svg+xml"
+            "txt" -> "text/plain"
+            "json" -> "application/json"
+            "xml" -> "application/xml"
+            "ics", "ical", "ifb" -> "text/calendar"
+            else -> try {
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "application/octet-stream"
+            } catch (_: Exception) {
+                "application/octet-stream"
+            }
+        }
+    }
+
+    private fun getCategoryForFile(filename: String): String {
+        val name = filename.lowercase()
+        return when {
+            name.endsWith(".mp4") || name.endsWith(".webm") || name.endsWith(".ts") || name.endsWith(".mkv") || name.endsWith(".avi") || name.endsWith(".mov") || name.endsWith(".flv") || name.endsWith(".3gp") || name.endsWith(".wmv") || name.endsWith(".m4v") -> "videos"
+            name.endsWith(".mp3") || name.endsWith(".m4a") || name.endsWith(".wav") || name.endsWith(".flac") || name.endsWith(".ogg") || name.endsWith(".aac") || name.endsWith(".opus") || name.endsWith(".wma") || name.endsWith(".amr") -> "music"
+            name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif") || name.endsWith(".webp") || name.endsWith(".bmp") || name.endsWith(".svg") || name.endsWith(".ico") || name.endsWith(".heic") || name.endsWith(".heif") || name.endsWith(".raw") || name.endsWith(".tiff") -> "images"
+            else -> "documents"
+        }
+    }
+
+    private fun saveToPublicDownloads(sourceFile: File, filename: String): File {
+        val isVideo = filename.substringAfterLast('.', "").lowercase()
+            .let { it == "mp4" || it == "mkv" || it == "webm" || it == "avi" || it == "mov" || it == "ts" || it == "m4v" }
+        val isAudio = filename.substringAfterLast('.', "").lowercase()
+            .let { it == "mp3" || it == "aac" || it == "opus" || it == "flac" || it == "m4a" || it == "ogg" }
+
+        val mime = getMimeTypeForFile(filename)
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10+: use MediaStore so the file is visible to every file manager / gallery
+            val collection = when {
+                isVideo -> MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                isAudio -> MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                else    -> MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            }
+            val relativeDir = when {
+                isVideo -> "${Environment.DIRECTORY_MOVIES}/NEXADownloads"
+                isAudio -> "${Environment.DIRECTORY_MUSIC}/NEXADownloads"
+                else    -> "${Environment.DIRECTORY_DOWNLOADS}/NEXADownloads"
+            }
+            val displayNameColumn = when {
+                isVideo -> MediaStore.Video.Media.DISPLAY_NAME
+                isAudio -> MediaStore.Audio.Media.DISPLAY_NAME
+                else    -> MediaStore.Downloads.DISPLAY_NAME
+            }
+            val mimeColumn = when {
+                isVideo -> MediaStore.Video.Media.MIME_TYPE
+                isAudio -> MediaStore.Audio.Media.MIME_TYPE
+                else    -> MediaStore.Downloads.MIME_TYPE
+            }
+            val relativeDirColumn = when {
+                isVideo -> MediaStore.Video.Media.RELATIVE_PATH
+                isAudio -> MediaStore.Audio.Media.RELATIVE_PATH
+                else    -> MediaStore.Downloads.RELATIVE_PATH
+            }
+            val isPendingColumn = when {
+                isVideo -> MediaStore.Video.Media.IS_PENDING
+                isAudio -> MediaStore.Audio.Media.IS_PENDING
+                else    -> MediaStore.Downloads.IS_PENDING
+            }
+
+            val values = ContentValues().apply {
+                put(displayNameColumn, filename)
+                put(mimeColumn, mime)
+                put(relativeDirColumn, relativeDir)
+                put(isPendingColumn, 1)
+            }
+            val resolver = context.contentResolver
+            val itemUri = resolver.insert(collection, values)
+            if (itemUri != null) {
+                try {
+                    resolver.openOutputStream(itemUri)?.use { out ->
+                        sourceFile.inputStream().use { it.copyTo(out) }
+                    }
+                    values.clear()
+                    values.put(isPendingColumn, 0)
+                    resolver.update(itemUri, values, null, null)
+                    sourceFile.delete()
+                    Log.i("DownloadEngine", "Saved to public MediaStore: $relativeDir/$filename")
+                } catch (e: Exception) {
+                    Log.e("DownloadEngine", "MediaStore write failed, falling back to external files dir", e)
+                    resolver.delete(itemUri, null, null)
+                    return fallbackSaveToExternalFiles(sourceFile, filename)
+                }
+                // Return a placeholder File — callers should prefer the MediaStore URI
+                File(Environment.getExternalStoragePublicDirectory(relativeDir.substringBefore('/')), "NEXADownloads/$filename")
+            } else {
+                Log.w("DownloadEngine", "MediaStore insert returned null, falling back")
+                fallbackSaveToExternalFiles(sourceFile, filename)
+            }
+        } else {
+            // Android 9 and below — direct write to public folder
+            val publicDir = when {
+                isVideo -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+                isAudio -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                else    -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            }
+            val destDir = File(publicDir, "NEXADownloads").apply { mkdirs() }
+            val safeFilename = SecurityPolicy.sanitizeFilename(filename)
+            var destFile = File(destDir, safeFilename)
+            var counter = 1
+            while (destFile.exists()) {
+                val nameWithoutExt = safeFilename.substringBeforeLast('.')
+                val extension = safeFilename.substringAfterLast('.', "")
+                destFile = if (extension.isNotEmpty())
+                    File(destDir, "$nameWithoutExt($counter).$extension")
+                else
+                    File(destDir, "$nameWithoutExt($counter)")
+                counter++
+            }
+            try {
+                sourceFile.copyTo(destFile, overwrite = true)
+                sourceFile.delete()
+                // Trigger MediaScanner so it appears in gallery/file manager immediately
+                android.media.MediaScannerConnection.scanFile(
+                    context, arrayOf(destFile.absolutePath), arrayOf(mime), null
+                )
+                Log.i("DownloadEngine", "Saved to public folder: ${destFile.absolutePath}")
+                destFile
+            } catch (e: Exception) {
+                Log.e("DownloadEngine", "Failed to save to public folder", e)
+                sourceFile
+            }
+        }
+    }
+
+    /** Fallback when MediaStore is unavailable or fails — saves to app-scoped external dir */
+    private fun fallbackSaveToExternalFiles(sourceFile: File, filename: String): File {
+        val category = getCategoryForFile(filename)
+        val downloadDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir, "NEXADownloads/$category").apply { mkdirs() }
+        val destFile = File(downloadDir, filename)
+        return try {
+            sourceFile.copyTo(destFile, overwrite = true)
+            sourceFile.delete()
+            Log.i("DownloadEngine", "Fallback saved to: ${destFile.absolutePath}")
+            destFile
+        } catch (e: Exception) {
+            Log.e("DownloadEngine", "Fallback save also failed", e)
+            sourceFile
+        }
+    }
+
+
+    private fun parseM3U8MasterPlaylist(baseUrl: String, content: String): List<Pair<String, String>> {
+        val variants = mutableListOf<Pair<String, String>>()
+        val lines = content.lines()
+        var currentQuality = ""
+        val baseUri = baseUrl.substring(0, baseUrl.lastIndexOf("/") + 1)
+
+        for (line in lines) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("#EXT-X-STREAM-INF")) {
+                val resMatch = Regex("RESOLUTION=(\\d+x\\d+)").find(trimmed)
+                if (resMatch != null) {
+                    val res = resMatch.groupValues[1]
+                    val height = res.substringAfter("x").toIntOrNull() ?: 0
+                    currentQuality = "${height}p"
+                } else {
+                    val bwMatch = Regex("BANDWIDTH=(\\d+)").find(trimmed)
+                    if (bwMatch != null) {
+                        val kbps = (bwMatch.groupValues[1].toIntOrNull() ?: 0) / 1000
+                        currentQuality = "${kbps}kbps"
+                    } else {
+                        currentQuality = "Unknown Quality"
+                    }
+                }
+            } else if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && currentQuality.isNotEmpty()) {
+                val fullUrl = if (trimmed.startsWith("http")) trimmed else "$baseUri$trimmed"
+                variants.add(fullUrl to currentQuality)
+                currentQuality = ""
+            }
+        }
+        
+        return variants.distinctBy { it.second }.sortedByDescending { 
+            it.second.replace(Regex("[^0-9]"), "").toIntOrNull() ?: 0 
+        }
+    }
+
+    private fun remuxTsToMp4(inputFile: File, outputFile: File): Boolean {
+        var extractor: android.media.MediaExtractor? = null
+        var muxer: android.media.MediaMuxer? = null
+        try {
+            extractor = android.media.MediaExtractor()
+            extractor.setDataSource(inputFile.absolutePath)
+            
+            muxer = android.media.MediaMuxer(outputFile.absolutePath, android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+            
+            val trackCount = extractor.trackCount
+            val trackMap = HashMap<Int, Int>()
+            
+            for (i in 0 until trackCount) {
+                val format = extractor.getTrackFormat(i)
+                val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: ""
+                if (mime.startsWith("video/") || mime.startsWith("audio/")) {
+                    extractor.selectTrack(i)
+                    val dstTrackId = muxer.addTrack(format)
+                    trackMap[i] = dstTrackId
+                }
+            }
+            
+            if (trackMap.isEmpty()) {
+                Log.e("DownloadEngine", "MediaMuxer error: No video or audio tracks found in stitched TS file.")
+                return false
+            }
+            
+            muxer.start()
+            
+            val maxBufferSize = 1024 * 1024
+            val buffer = java.nio.ByteBuffer.allocate(maxBufferSize)
+            val bufferInfo = android.media.MediaCodec.BufferInfo()
+            val lastTrackTimestamps = HashMap<Int, Long>()
+            
+            while (true) {
+                val trackIndex = extractor.sampleTrackIndex
+                if (trackIndex < 0) break
+                
+                val dstTrackId = trackMap[trackIndex]
+                if (dstTrackId != null) {
+                    bufferInfo.offset = 0
+                    bufferInfo.size = extractor.readSampleData(buffer, 0)
+                    if (bufferInfo.size < 0) {
+                        break
+                    }
+                    
+                    val originalTime = extractor.sampleTime
+                    val lastTime = lastTrackTimestamps[dstTrackId] ?: -1L
+                    val adjustedTime = if (originalTime <= lastTime) {
+                        lastTime + 1000L // Increment by 1ms to maintain strictly monotonic presentation timestamps
+                    } else {
+                        originalTime
+                    }
+                    lastTrackTimestamps[dstTrackId] = adjustedTime
+                    
+                    bufferInfo.presentationTimeUs = adjustedTime
+                    bufferInfo.flags = extractor.sampleFlags
+                    
+                    muxer.writeSampleData(dstTrackId, buffer, bufferInfo)
+                }
+                extractor.advance()
+            }
+            
+            muxer.stop()
+            Log.i("DownloadEngine", "MediaMuxer successfully remuxed HLS TS stream into standard MP4.")
+            return true
+        } catch (e: Exception) {
+            Log.e("DownloadEngine", "MediaMuxer remuxing failed", e)
+            return false
+        } finally {
+            try {
+                extractor?.release()
+            } catch (e: Exception) {}
+            try {
+                muxer?.release()
+            } catch (e: Exception) {}
+        }
+    }
+    data class EncryptionKeyInfo(
+        val method: String,
+        val uri: String,
+        val iv: ByteArray?
+    )
+
+    private fun parseEncryptionKeyInfo(manifestUrl: String, manifestContent: String): EncryptionKeyInfo? {
+        val line = manifestContent.lines().firstOrNull { it.startsWith("#EXT-X-KEY") } ?: return null
+        val methodMatch = Regex("METHOD=([^,]+)").find(line)
+        val method = methodMatch?.groupValues?.get(1) ?: return null
+        if (method != "AES-128") return null
+        
+        val uriMatch = Regex("URI=\"([^\"]+)\"").find(line)
+        val rawUri = uriMatch?.groupValues?.get(1) ?: return null
+        
+        val baseUri = manifestUrl.substring(0, manifestUrl.lastIndexOf("/") + 1)
+        val resolvedUri = if (rawUri.startsWith("http")) rawUri else "$baseUri$rawUri"
+        
+        val ivMatch = Regex("IV=0x([0-9a-fA-F]+)").find(line)
+        val ivBytes = ivMatch?.groupValues?.get(1)?.let { ivStr ->
+            val bytes = ByteArray(16)
+            for (i in 0 until 16) {
+                val index = i * 2
+                if (index + 2 <= ivStr.length) {
+                    bytes[i] = ivStr.substring(index, index + 2).toInt(16).toByte()
+                }
+            }
+            bytes
+        }
+        
+        return EncryptionKeyInfo(method, resolvedUri, ivBytes)
+    }
+
+    private fun fetchKeyBytes(keyUrl: String, referrerUrl: String?, cookies: String?): ByteArray? {
+        return try {
+            val headers = mutableMapOf<String, String>()
+            if (!referrerUrl.isNullOrEmpty()) {
+                headers["Referer"] = referrerUrl
+            }
+            headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+            if (!cookies.isNullOrEmpty()) {
+                headers["Cookie"] = cookies
+            }
+            val connection = openConnectionWithRedirects(keyUrl, headers)
+            val result = if (connection.responseCode in 200..299) {
+                try {
+                    connection.inputStream.readBytes()
+                } catch (oom: OutOfMemoryError) {
+                    Log.e("DownloadEngine", "OOM reading encryption key from $keyUrl — treating as no-key", oom)
+                    null
+                }
+            } else {
+                null
+            }
+            connection.disconnect()
+            result
+        } catch (e: Exception) {
+            Log.e("DownloadEngine", "Failed to fetch encryption key: $keyUrl", e)
+            null
+        }
+    }
+
+    private fun decryptAes128(bytes: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
+        val cipher = javax.crypto.Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val keySpec = javax.crypto.spec.SecretKeySpec(key, "AES")
+        val ivSpec = javax.crypto.spec.IvParameterSpec(iv)
+        cipher.init(javax.crypto.Cipher.DECRYPT_MODE, keySpec, ivSpec)
+        return cipher.doFinal(bytes)
+    }
+
+    private fun getSequenceIv(sequenceNumber: Int): ByteArray {
+        val iv = ByteArray(16)
+        iv[12] = ((sequenceNumber shr 24) and 0xFF).toByte()
+        iv[13] = ((sequenceNumber shr 16) and 0xFF).toByte()
+        iv[14] = ((sequenceNumber shr 8) and 0xFF).toByte()
+        iv[15] = (sequenceNumber and 0xFF).toByte()
+        return iv
+    }
+
+    private fun saveDownloadHistory() {
+        val file = File(context.filesDir, "download_history.json")
+        try {
+            val jsonArray = org.json.JSONArray()
+            _jobs.value.forEach { job ->
+                val progressVal = job.progress.value
+                val obj = org.json.JSONObject().apply {
+                    put("id", job.id)
+                    put("filename", job.filename)
+                    put("url", job.url)
+                    put("saveToLocker", job.saveToLocker)
+                    put("isGeneric", job.isGeneric)
+                    put("contentType", job.contentType ?: "")
+                    put("referrerUrl", job.referrerUrl ?: "")
+                    put("cookies", job.cookies ?: "")
+                    put("audioUrl", job.audioUrl ?: "")
+                    put("mediaType", job.mediaType.name)
+                    put("sourceOrigin", job.sourceOrigin ?: "")
+                    put("canResume", job.canResume)
+                    put("bytesDownloaded", job.bytesDownloaded)
+                    
+                    when (progressVal) {
+                        is DownloadProgress.Downloading -> {
+                            put("status", "downloading")
+                            put("percent", progressVal.percent)
+                            put("bytes", progressVal.bytesDownloaded)
+                        }
+                        is DownloadProgress.Muxing -> {
+                            put("status", "muxing")
+                            put("message", progressVal.message)
+                        }
+                        is DownloadProgress.Complete -> {
+                            put("status", "complete")
+                            put("filePath", progressVal.file.absolutePath)
+                            put("bytes", progressVal.sizeBytes)
+                            progressVal.openUri?.let { put("openUri", it.toString()) }
+                        }
+                        is DownloadProgress.Error -> {
+                            put("status", "error")
+                            put("message", progressVal.message)
+                        }
+                    }
+                }
+                jsonArray.put(obj)
+            }
+            file.writeText(jsonArray.toString())
+        } catch (e: Exception) {
+            Log.e("DownloadEngine", "Error saving download history", e)
+        }
+    }
+
+    private fun loadDownloadHistory() {
+        val file = File(context.filesDir, "download_history.json")
+        if (!file.exists()) return
+        try {
+            val jsonStr = file.readText()
+            val jsonArray = org.json.JSONArray(jsonStr)
+            val list = mutableListOf<DownloadJob>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                val id = obj.getString("id")
+                val filename = obj.getString("filename")
+                val url = obj.getString("url")
+                val saveToLocker = obj.getBoolean("saveToLocker")
+                val isGeneric = obj.optBoolean("isGeneric", false)
+                val contentType = obj.optString("contentType").ifEmpty { null }
+                val referrerUrl = obj.optString("referrerUrl").ifEmpty { null }
+                val cookies = obj.optString("cookies").ifEmpty { null }
+                val audioUrl = obj.optString("audioUrl").ifEmpty { null }
+                val mediaTypeName = obj.optString("mediaType", MediaInterceptor.MediaType.MP4.name)
+                val mediaType = try { MediaInterceptor.MediaType.valueOf(mediaTypeName) } catch (e: Exception) { MediaInterceptor.MediaType.MP4 }
+                val sourceOrigin = obj.optString("sourceOrigin").ifEmpty { null }
+                val canResume = obj.optBoolean("canResume", false)
+                val bytesDownloaded = obj.optLong("bytesDownloaded", 0L)
+                val status = obj.optString("status", "")
+                
+                val progressFlow = when (status) {
+                    "complete" -> {
+                        val filePath = obj.getString("filePath")
+                        val bytes = obj.optLong("bytes", 0L)
+                        val openUriStr = if (obj.has("openUri")) obj.getString("openUri") else null
+                        val openUri = if (!openUriStr.isNullOrEmpty()) Uri.parse(openUriStr) else null
+                        MutableStateFlow<DownloadProgress>(DownloadProgress.Complete(File(filePath), bytes, openUri))
+                    }
+                    "error" -> {
+                        val message = obj.optString("message", "Unknown error")
+                        MutableStateFlow<DownloadProgress>(DownloadProgress.Error(message))
+                    }
+                    else -> {
+                        MutableStateFlow<DownloadProgress>(DownloadProgress.Error("Interrupted"))
+                    }
+                }
+                
+                list.add(
+                    DownloadJob(
+                        id = id,
+                        filename = filename,
+                        url = url,
+                        saveToLocker = saveToLocker,
+                        progress = progressFlow,
+                        isGeneric = isGeneric,
+                        contentType = contentType,
+                        referrerUrl = referrerUrl,
+                        cookies = cookies,
+                        audioUrl = audioUrl,
+                        mediaType = mediaType,
+                        sourceOrigin = sourceOrigin,
+                        canResume = canResume,
+                        bytesDownloaded = bytesDownloaded
+                    )
+                )
+            }
+            _jobs.value = list
+        } catch (e: Exception) {
+            Log.e("DownloadEngine", "Error loading download history", e)
+        }
+    }
+}

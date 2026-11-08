@@ -1,4 +1,4 @@
-# Omni Sync — Canonical Sync Domain & Protocol Specification (v1.0)
+# NEXA Sync — Canonical Sync Domain & Protocol Specification (v1.0)
 
 **Document Version:** 1.0.0  
 **Status:** CANONICAL SPECIFICATION · Language-Neutral  
@@ -36,11 +36,11 @@
 
 ## 1. Architectural Overview & Core Concepts
 
-Omni Sync uses an **operation-based CRDT / LWW-Element-Set hybrid** over canonical domain entities. The protocol defines a pure abstraction layer independent of how any specific browser (Android SQLite/JSON, Chrome bookmarks API, Firefox Places) stores its data locally.
+NEXA Sync uses an **operation-based CRDT / LWW-Element-Set hybrid** over canonical domain entities. The protocol defines a pure abstraction layer independent of how any specific browser (Android SQLite/JSON, Chrome bookmarks API, Firefox Places) stores its data locally.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           OMNI SYNC DOMAIN MODEL                            │
+│                           NEXA SYNC DOMAIN MODEL                            │
 │                                                                             │
 │  ┌─────────────────────────┐  ┌──────────────────────────────────────────┐  │
 │  │   Canonical Entities    │  │           Sync Operations                │  │
@@ -83,8 +83,8 @@ Before exchanging operations, two peers exchange capability envelopes during the
   "minSupportedVersion": 1,
   "maxSupportedVersion": 1,
   "deviceId": "d4e2f89a-32b1-4c7a-96e5-18e8a93a1001",
-  "deviceName": "Pixel 8 Pro (Omni Android)",
-  "clientType": "OMNI_ANDROID",
+  "deviceName": "Pixel 8 Pro (NEXA Android)",
+  "clientType": "NEXA_ANDROID",
   "clientVersion": "1.2.9.3",
   "supportedEntities": ["BOOKMARK", "FOLDER", "TAB", "HISTORY", "SETTING"],
   "capabilities": {
@@ -132,8 +132,8 @@ Every sync message sent between peers is wrapped in a `SyncEnvelope`:
   "id": "bmk_8f9c0e2a-1b4d-4e3f-9a7c-5b2d1e0f3a4b",
   "parentId": "fld_3a2b1c0d-9e8f-7a6b-5c4d-3e2f1a0b9c8d",
   "position": "a0",
-  "title": "GitHub — RebelRoot NEXA Browser",
-  "url": "https://github.com/REBEL-ROOT/omni-browser",
+  "title": "GitHub — DEVILNIHAD NEXA Browser",
+  "url": "https://github.com/DEVILNIHAD/NEXA-Browser",
   "faviconUrl": "https://github.com/favicon.ico",
   "createdAt": 1724330400000,
   "modifiedAt": 1724330400000,
@@ -251,7 +251,7 @@ Sync mutations are packaged as atomic, immutable operations:
     "parentId": "root",
     "position": "a0",
     "title": "NEXA Browser",
-    "url": "https://omnibrowser.app"
+    "url": "https://nexabrowser.app"
   }
 }
 ```
@@ -267,7 +267,7 @@ Supported operation types:
 
 ### 4.2 Fractional Indexing & Sibling Ordering
 
-To prevent concurrent insertion conflicts and avoid $O(N)$ re-indexing of sibling bookmarks, Omni Sync uses **lexicographical fractional indexing** (Base-62 / ASCII string keys):
+To prevent concurrent insertion conflicts and avoid $O(N)$ re-indexing of sibling bookmarks, NEXA Sync uses **lexicographical fractional indexing** (Base-62 / ASCII string keys):
 
 - Initial item 0: `"a0"`
 - Initial item 1: `"a1"`
@@ -352,7 +352,7 @@ Every operation contains an HLC string formatted as:
 
 | Platform | Local Identifier Mapping | Container Mapping |
 | :--- | :--- | :--- |
-| **Omni Android** | Uses canonical UUID directly (`OmniBookmark.id`) | Maps directly to `BookmarkCollection` root / folders |
+| **NEXA Android** | Uses canonical UUID directly (`NEXABookmark.id`) | Maps directly to `BookmarkCollection` root / folders |
 | **Chrome Extension (MV3)** | Maps Chrome integer IDs (`"123"`) to Sync UUIDs via `chrome.storage.local` mapping table | Maps Chrome `"1"` (Bookmarks Bar) $\leftrightarrow$ `"bookmarks_bar"`, `"2"` (Other) $\leftrightarrow$ `"other_bookmarks"` |
 | **Firefox Extension** | Maps Firefox Places GUIDs (`"places_guid"`) to Sync UUIDs | Maps `toolbar_____` $\leftrightarrow$ `"bookmarks_bar"`, `unfiled_____` $\leftrightarrow$ `"other_bookmarks"` |
 

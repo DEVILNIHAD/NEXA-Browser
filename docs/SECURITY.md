@@ -14,7 +14,7 @@
 
 **Please do NOT open a public GitHub Issue for security vulnerabilities.**
 
-Use GitHub's private [Security Advisory](https://github.com/REBEL-ROOT/omni-browser/security/advisories/new) system to report responsibly.
+Use GitHub's private [Security Advisory](https://github.com/DEVILNIHAD/NEXA-Browser/security/advisories/new) system to report responsibly.
 
 ### What to include:
 - Description of the vulnerability

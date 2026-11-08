@@ -1,11 +1,11 @@
 {
     "manifest_version": 2,
-    "name": "Omni AI Blocker",
+    "name": "NEXA AI Blocker",
     "version": "1.1.0",
     "description": "Removes generative AI overview cards and assistant response boxes from search result pages.",
     "browser_specific_settings": {
         "gecko": {
-            "id": "omni-ai-blocker@omnibrowser.app"
+            "id": "nexa-ai-blocker@nexabrowser.app"
         }
     },
     "content_scripts": [
