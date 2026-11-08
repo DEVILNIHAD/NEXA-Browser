@@ -1,0 +1,37 @@
+{
+  "manifest_version": 2,
+  "name": "Omni Sync",
+  "version": "1.0.0",
+  "description": "End-to-end encrypted, zero-cloud LAN bookmark & tab synchronization with NEXA Browser.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "omni-sync@rebelroot.com",
+      "strict_min_version": "115.0"
+    }
+  },
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "alarms",
+    "tabs",
+    "notifications",
+    "http://*/*",
+    "https://*/*",
+    "ws://*/*",
+    "wss://*/*"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "browser_action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Omni Sync"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

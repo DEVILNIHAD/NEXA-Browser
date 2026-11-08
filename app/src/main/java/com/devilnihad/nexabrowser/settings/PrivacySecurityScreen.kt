@@ -1,0 +1,761 @@
+/*
+ * NEXA Browser - A premium, private, and secure web browser.
+ * Copyright (C) 2026 RebelRoot Ltd
+ */
+
+package com.devilnihad.nexabrowser.settings
+
+import android.app.Activity
+import android.content.Context
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.devilnihad.nexabrowser.R
+import com.devilnihad.nexabrowser.browser.BrowserViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PrivacySecurityScreen(
+    viewModel: BrowserViewModel,
+    onNavigateBack: () -> Unit,
+    onOpenAdBlockConfig: () -> Unit = {},
+    onOpenVisualBlockConfig: () -> Unit = {},
+    onOpenUserAgentConfig: () -> Unit = {}
+) {
+    BackHandler {
+        onNavigateBack()
+    }
+
+    val context = LocalContext.current
+    val isDarkMode = viewModel.isDarkThemeEnabled
+    val accentColor = MaterialTheme.colorScheme.primary
+    val bgColor = if (viewModel.isAmoledMode) Color(0xFF000000) else MaterialTheme.colorScheme.background
+    val cardColor = if (viewModel.isAmoledMode) Color(0xFF0A0A0A) else MaterialTheme.colorScheme.surface
+    val cardBorderColor = if (viewModel.isAmoledMode) Color(0xFF1C1C1E) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val dividerColor = if (viewModel.isAmoledMode) Color(0xFF111111) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+
+    // Dialog state controllers
+    var showClearDataDialog by remember { mutableStateOf(false) }
+    var showPrivacyGuideDialog by remember { mutableStateOf(false) }
+    var showCookieBehaviorDialog by remember { mutableStateOf(false) }
+    var showAdPrivacyDialog by remember { mutableStateOf(false) }
+    var showPreloadPagesDialog by remember { mutableStateOf(false) }
+    var showSafeBrowsingDialog by remember { mutableStateOf(false) }
+    var showAutofillProviderDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(id = R.string.privacy_security_title), fontWeight = FontWeight.Bold, color = textPrimaryColor) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(id = R.string.back_desc),
+                            tint = textPrimaryColor
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = bgColor),
+                modifier = Modifier.border(BorderStroke(0.5.dp, cardBorderColor.copy(alpha = 0.2f)))
+            )
+        },
+        containerColor = bgColor
+    ) { paddingValues ->
+        val adaptiveContentCap = com.devilnihad.nexabrowser.ui.adaptive.rememberAdaptiveUiMetrics().screenContentMaxWidth
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .widthIn(max = adaptiveContentCap)
+                .fillMaxHeight()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // ── PRIVACY CATEGORY ───────────────────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(id = R.string.privacy_title), color = accentColor, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(cardColor)
+                        .border(0.5.dp, cardBorderColor, RoundedCornerShape(16.dp))
+                ) {
+                    // Item 0: AdBlock & Custom Filter List Providers
+                    SettingsRow(
+                        icon = Icons.Rounded.Shield,
+                        title = stringResource(id = R.string.adblock_filter_providers),
+                        subtitle = stringResource(id = R.string.adblock_filter_providers_desc),
+                        onClick = onOpenAdBlockConfig,
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 0.1: Block Area Rules (Tap-to-Hide)
+                    SettingsRow(
+                        icon = Icons.Rounded.LayersClear,
+                        title = stringResource(id = R.string.visual_block_settings_title),
+                        subtitle = stringResource(id = R.string.visual_block_settings_desc),
+                        onClick = onOpenVisualBlockConfig,
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 0.2: Custom User Agent (Global & Site-Specific)
+                    SettingsRow(
+                        icon = Icons.Rounded.Devices,
+                        title = "Custom User Agent",
+                        subtitle = "Global default & site-specific User Agent overrides",
+                        onClick = onOpenUserAgentConfig,
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 0.5: Proxy & VPN
+                    SettingsRow(
+                        icon = Icons.Rounded.VpnLock,
+                        title = stringResource(id = R.string.proxy_vpn_title),
+                        subtitle = stringResource(id = R.string.proxy_vpn_desc),
+                        onClick = { Toast.makeText(context, "Configure Proxy & VPN in Privacy Hub", Toast.LENGTH_SHORT).show() },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 1: Delete browsing data
+                    SettingsRow(
+                        icon = Icons.Rounded.DeleteOutline,
+                        title = stringResource(id = R.string.delete_browsing_data_title),
+                        subtitle = stringResource(id = R.string.delete_browsing_data_desc),
+                        onClick = { showClearDataDialog = true },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 2: Privacy Guide
+                    SettingsRow(
+                        icon = Icons.Rounded.VerifiedUser,
+                        title = stringResource(id = R.string.privacy_guide_title),
+                        subtitle = stringResource(id = R.string.privacy_guide_desc),
+                        onClick = { showPrivacyGuideDialog = true },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 3: Third-party cookies
+                    SettingsRow(
+                        icon = Icons.Rounded.Cookie,
+                        title = stringResource(id = R.string.third_party_cookies_title),
+                        subtitle = stringResource(id = R.string.third_party_cookies_title),
+                        onClick = { showCookieBehaviorDialog = true },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 4: Ad privacy
+                    SettingsRow(
+                        icon = Icons.Rounded.FeaturedPlayList,
+                        title = stringResource(id = R.string.ad_privacy_title),
+                        subtitle = stringResource(id = R.string.ad_privacy_desc),
+                        onClick = { showAdPrivacyDialog = true },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 5: Do Not Track
+                    SettingsSwitchRow(
+                        icon = Icons.Rounded.RemoveRedEye,
+                        title = stringResource(id = R.string.do_not_track_title),
+                        subtitle = if (viewModel.doNotTrack) "On" else "Off",
+                        checked = viewModel.doNotTrack,
+                        onCheckedChange = { viewModel.saveDoNotTrack(context, it) },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 6: Preload pages
+                    SettingsRow(
+                        icon = Icons.Rounded.NetworkWifi,
+                        title = stringResource(id = R.string.preload_pages_title),
+                        subtitle = stringResource(id = R.string.preload_pages_title),
+                        onClick = { showPreloadPagesDialog = true },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 7: Lock Incognito tabs
+                    SettingsSwitchRow(
+                        icon = Icons.Rounded.Lock,
+                        title = stringResource(id = R.string.lock_incognito_title),
+                        subtitle = stringResource(id = R.string.lock_incognito_desc),
+                        checked = viewModel.lockIncognito,
+                        onCheckedChange = { viewModel.saveLockIncognito(context, it) },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 8: Open links in external apps
+                    SettingsSwitchRow(
+                        icon = Icons.Rounded.OpenInNew,
+                        title = "Open links in external apps",
+                        subtitle = "Tap links open directly; auto-redirects ask per site",
+                        checked = viewModel.isOpenExternalAppAllowed,
+                        onCheckedChange = { viewModel.toggleOpenExternalAppAllowed(context) },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 9: Omni Password Manager Master Switch
+                    SettingsSwitchRow(
+                        icon = Icons.Rounded.Key,
+                        title = "Omni Password Manager",
+                        subtitle = if (viewModel.isOmniPasswordManagerEnabled) "Save and autofill passwords with Omni Vault" else "Disabled",
+                        checked = viewModel.isOmniPasswordManagerEnabled,
+                        onCheckedChange = { viewModel.setOmniPasswordManagerEnabled(it, context) },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 10: Autofill Provider
+                    SettingsRow(
+                        icon = Icons.Rounded.Password,
+                        title = stringResource(id = R.string.autofill_provider_title),
+                        subtitle = when (viewModel.autofillProviderMode) {
+                            BrowserViewModel.AutofillProviderMode.THIRD_PARTY -> stringResource(R.string.autofill_provider_system)
+                            BrowserViewModel.AutofillProviderMode.OMNI_VAULT -> stringResource(R.string.autofill_provider_omni)
+                            BrowserViewModel.AutofillProviderMode.BOTH -> stringResource(R.string.autofill_provider_both)
+                        },
+                        onClick = { showAutofillProviderDialog = true },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                }
+            }
+
+            // ── SECURITY CATEGORY ──────────────────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(id = R.string.security_title), color = accentColor, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(cardColor)
+                        .border(0.5.dp, cardBorderColor, RoundedCornerShape(16.dp))
+                ) {
+                    // Item 8: Safe Browsing
+                    SettingsRow(
+                        icon = Icons.Rounded.Shield,
+                        title = stringResource(id = R.string.safe_browsing_title),
+                        subtitle = stringResource(id = R.string.safe_browsing_title),
+                        onClick = { showSafeBrowsingDialog = true },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 9: HTTPS-Only Mode
+                    SettingsSwitchRow(
+                        icon = Icons.Rounded.Https,
+                        title = "HTTPS-Only Mode",
+                        subtitle = "Upgrade all connection attempts to HTTPS",
+                        checked = viewModel.httpsOnlyMode,
+                        onCheckedChange = { viewModel.saveHttpsOnlyMode(context, it) },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                    HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Item 10: Compromised password warning
+                    SettingsSwitchRow(
+                        icon = Icons.Rounded.ReportProblem,
+                        title = "Warn you of compromised passwords",
+                        subtitle = "Alerts you if saved logins leak in a data breach",
+                        checked = viewModel.compromisedPasswordWarning,
+                        onCheckedChange = { viewModel.saveCompromisedPasswordWarning(context, it) },
+                        textPrimaryColor = textPrimaryColor,
+                        textSecondaryColor = textSecondaryColor,
+                        accentColor = accentColor
+                    )
+                }
+            }
+        }
+    }
+
+    // ── DIALOGS IMPLEMENTATION ──────────────────────────────────────────────
+
+    // Delete Browsing Data Dialog
+    if (showClearDataDialog) {
+        var clearHist by remember { mutableStateOf(true) }
+        var clearCook by remember { mutableStateOf(true) }
+        var clearCach by remember { mutableStateOf(true) }
+        var clearPass by remember { mutableStateOf(false) }
+        var clearAuto by remember { mutableStateOf(false) }
+        var selectedTimeRange by remember { mutableStateOf(-1) } // Default: all time (-1)
+
+        AlertDialog(
+            onDismissRequest = { showClearDataDialog = false },
+            title = { Text("Delete browsing data", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Time Range Selector
+                    Text("Time range", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    var expandedTimeRange by remember { mutableStateOf(false) }
+                    val timeRanges = listOf(
+                        "Last hour" to 60,
+                        "Last 24 hours" to 1440,
+                        "Last 7 days" to 10080,
+                        "Last 4 weeks" to 40320,
+                        "All time" to -1
+                    )
+                    Box {
+                        Button(
+                            onClick = { expandedTimeRange = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = cardColor, contentColor = textPrimaryColor),
+                            modifier = Modifier.fillMaxWidth().border(0.5.dp, cardBorderColor, RoundedCornerShape(8.dp))
+                        ) {
+                            Text(timeRanges.find { it.second == selectedTimeRange }?.first ?: "All time")
+                        }
+                        DropdownMenu(
+                            expanded = expandedTimeRange,
+                            onDismissRequest = { expandedTimeRange = false }
+                        ) {
+                            timeRanges.forEach { (label, value) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        selectedTimeRange = value
+                                        expandedTimeRange = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = dividerColor)
+
+                    // Checkboxes
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = clearHist, onCheckedChange = { clearHist = it })
+                        Text("Browsing history", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = clearCook, onCheckedChange = { clearCook = it })
+                        Text("Cookies and site data", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = clearCach, onCheckedChange = { clearCach = it })
+                        Text("Cached images and files", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = clearPass, onCheckedChange = { clearPass = it })
+                        Text("Saved passwords", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = clearAuto, onCheckedChange = { clearAuto = it })
+                        Text("Autofill form data", modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.clearCustomBrowsingData(
+                            context = context,
+                            clearHistory = clearHist,
+                            clearCookies = clearCook,
+                            clearCache = clearCach,
+                            clearPasswords = clearPass,
+                            clearAutofill = clearAuto,
+                            timeRangeMinutes = selectedTimeRange,
+                            onComplete = {
+                                showClearDataDialog = false
+                            }
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = Color.White)
+                ) {
+                    Text("Delete data")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDataDialog = false }) {
+                    Text("Cancel", color = textPrimaryColor)
+                }
+            }
+        )
+    }
+
+    // Privacy Guide Wizard Dialog
+    if (showPrivacyGuideDialog) {
+        var currentStep by remember { mutableStateOf(0) }
+        val steps = listOf(
+            Triple(
+                "Search and suggestions",
+                "As you type in the address bar, NEXA Browser queries suggestions from your selected search engine. Using privacy-centric engines like DuckDuckGo or Startpage helps block search profiling.",
+                Icons.Rounded.Search
+            ),
+            Triple(
+                "Safe Browsing Protection",
+                "Safe Browsing detects and alerts you about suspicious sites, files, and compromised certificates. Toggle Enhanced protection to actively intercept phishing targets beforehand.",
+                Icons.Rounded.Security
+            ),
+            Triple(
+                "Blocking cookies",
+                "You can choose to allow cookies, block third-party trackers, block all third-party cookies, or block all cookies. Restricting cookies keeps tracker networks from mapping you.",
+                Icons.Rounded.Cookie
+            )
+        )
+
+        AlertDialog(
+            onDismissRequest = { showPrivacyGuideDialog = false },
+            title = { Text(steps[currentStep].first, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = steps[currentStep].third,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Text(
+                        text = steps[currentStep].second,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 22.sp,
+                        color = textPrimaryColor
+                    )
+                    Text(
+                        text = "Step ${currentStep + 1} of ${steps.size}",
+                        fontSize = 12.sp,
+                        color = textSecondaryColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            confirmButton = {
+                if (currentStep < steps.size - 1) {
+                    Button(onClick = { currentStep++ }) {
+                        Text("Next")
+                    }
+                } else {
+                    Button(onClick = { showPrivacyGuideDialog = false }) {
+                        Text("Got it")
+                    }
+                }
+            },
+            dismissButton = {
+                if (currentStep > 0) {
+                    TextButton(onClick = { currentStep-- }) {
+                        Text("Back", color = textPrimaryColor)
+                    }
+                } else {
+                    TextButton(onClick = { showPrivacyGuideDialog = false }) {
+                        Text("Cancel", color = textPrimaryColor)
+                    }
+                }
+            }
+        )
+    }
+
+    // Cookie Behavior Choice Dialog
+    if (showCookieBehaviorDialog) {
+        val behaviors = listOf(
+            0 to "Allow all cookies",                                         // ACCEPT_ALL
+            4 to "Block third-party tracking cookies (Recommended)",          // ACCEPT_NON_TRACKERS
+            5 to "Isolate third-party cookies (Total Cookie Protection)",     // ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS (dFPI)
+            1 to "Block all third-party cookies",                             // ACCEPT_FIRST_PARTY
+            2 to "Block all cookies"                                          // ACCEPT_NONE
+        )
+        AlertDialog(
+            onDismissRequest = { showCookieBehaviorDialog = false },
+            title = { Text("Third-party cookies", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    behaviors.forEach { (value, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.saveCookieBehavior(context, value)
+                                    showCookieBehaviorDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = viewModel.cookieBehavior == value,
+                                onClick = {
+                                    viewModel.saveCookieBehavior(context, value)
+                                    showCookieBehaviorDialog = false
+                                }
+                            )
+                            Text(label, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // Ad Privacy Explanatory Dialog
+    if (showAdPrivacyDialog) {
+        AlertDialog(
+            onDismissRequest = { showAdPrivacyDialog = false },
+            title = { Text("Ad privacy settings", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "NEXA Browser blocks known third-party ad networks, telemetry trackers, and fingerprinters natively inside GeckoView. We do not support targeted site-based advertising protocols.",
+                    lineHeight = 22.sp
+                )
+            },
+            confirmButton = {
+                Button(onClick = { showAdPrivacyDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    // Preload Pages Dialog
+    if (showPreloadPagesDialog) {
+        val preloadOptions = listOf(
+            1 to "Standard preloading (Recommended)",
+            0 to "No preloading"
+        )
+        AlertDialog(
+            onDismissRequest = { showPreloadPagesDialog = false },
+            title = { Text("Preload pages", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    preloadOptions.forEach { (value, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.savePreloadPages(context, value)
+                                    showPreloadPagesDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = viewModel.preloadPages == value,
+                                onClick = {
+                                    viewModel.savePreloadPages(context, value)
+                                    showPreloadPagesDialog = false
+                                }
+                            )
+                            Text(label, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // Safe Browsing Protection Levels Dialog
+    if (showSafeBrowsingDialog) {
+        val safeBrowsingOptions = listOf(
+            2 to "Enhanced protection (Includes HTTPS-Only Mode upgrade)",
+            1 to "Standard protection (Recommended)",
+            0 to "No protection (warnings disabled)"
+        )
+        AlertDialog(
+            onDismissRequest = { showSafeBrowsingDialog = false },
+            title = { Text("Safe Browsing protection", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    safeBrowsingOptions.forEach { (value, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.saveSafeBrowsingLevel(context, value)
+                                    showSafeBrowsingDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = viewModel.safeBrowsingLevel == value,
+                                onClick = {
+                                    viewModel.saveSafeBrowsingLevel(context, value)
+                                    showSafeBrowsingDialog = false
+                                }
+                            )
+                            Text(label, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // Autofill Provider Mode Dialog
+    if (showAutofillProviderDialog) {
+        val autofillOptions = listOf(
+            BrowserViewModel.AutofillProviderMode.THIRD_PARTY to stringResource(R.string.autofill_provider_system),
+            BrowserViewModel.AutofillProviderMode.OMNI_VAULT to stringResource(R.string.autofill_provider_omni),
+            BrowserViewModel.AutofillProviderMode.BOTH to stringResource(R.string.autofill_provider_both)
+        )
+        AlertDialog(
+            onDismissRequest = { showAutofillProviderDialog = false },
+            title = { Text(stringResource(R.string.autofill_provider_title), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    autofillOptions.forEach { (mode, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setAutofillProviderMode(mode, context)
+                                    showAutofillProviderDialog = false
+                                }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = viewModel.autofillProviderMode == mode,
+                                onClick = {
+                                    viewModel.setAutofillProviderMode(mode, context)
+                                    showAutofillProviderDialog = false
+                                }
+                            )
+                            Text(label, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+}
+
+// Helpers for settings rows
+@Composable
+fun SettingsRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    textPrimaryColor: Color,
+    textSecondaryColor: Color,
+    accentColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(22.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = textPrimaryColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, color = textSecondaryColor, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = textSecondaryColor,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
+@Composable
+fun SettingsSwitchRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    textPrimaryColor: Color,
+    textSecondaryColor: Color,
+    accentColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(22.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = textPrimaryColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, color = textSecondaryColor, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = accentColor)
+        )
+    }
+}

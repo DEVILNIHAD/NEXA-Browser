@@ -1,1 +1,225 @@
-# NEXA Browser release rules. Keep empty unless a library requires custom rules.
+# ProGuard rules for NEXA Browser
+
+# 0. CRITICAL: Preserve GeckoRuntime initialization.
+# R8 strips getGeckoRuntime() calls as "dead code" because the return value is
+# often discarded and the geckoRuntime field write is not observable from the
+# call site. This left GeckoView uninitialized and caused the black-screen bug
+# in signed release builds (worked fine on emulator/debug where R8 is off).
+# @Keep is on the method; these rules are a belt-and-suspenders safeguard.
+-keepclassmembers class com.devilnihad.nexabrowser.browser.BrowserViewModel {
+    @androidx.annotation.Keep public *** getGeckoRuntime(...);
+    private volatile *** geckoRuntime;
+}
+
+# 0b. Honour @Keep explicitly (do not rely solely on transitive consumer rules
+# from androidx.annotation). Without this, any @Keep-annotated member that the
+# transitive rule misses would be stripped, which can break GeckoView init and
+# produce the black-screen / crash-loop in signed release builds.
+-keep @androidx.annotation.Keep class *
+-keepclassmembers class * {
+    @androidx.annotation.Keep <fields>;
+    @androidx.annotation.Keep <methods>;
+}
+
+# 0c. Explicitly keep the runtime accessor and the graceful error fallback so
+# that, even if GeckoView fails to initialize, the app shows GeckoErrorScreen
+# instead of an opaque black screen.
+-keepclassmembers class com.devilnihad.nexabrowser.browser.BrowserViewModel {
+    public *** getRuntime();
+}
+-keep class com.devilnihad.nexabrowser.MainActivityKt { *; }
+
+# 1. GeckoView (Firefox engine) — KEEP ALL; heavy reflection + JNI usage
+-keep class org.mozilla.geckoview.** { *; }
+-keep interface org.mozilla.geckoview.** { *; }
+-keep class org.mozilla.gecko.** { *; }
+-keep class org.mozilla.gecko.SysInfo { *; }
+-keep class org.mozilla.gecko.mozglue.JNIObject { *; }
+-keep class * extends org.mozilla.gecko.mozglue.JNIObject { *; }
+-keep @interface org.mozilla.gecko.annotation.JNITarget
+-keep @org.mozilla.gecko.annotation.JNITarget class *
+-keepclassmembers @org.mozilla.gecko.annotation.JNITarget class * { *; }
+-keepclassmembers class * { @org.mozilla.gecko.annotation.JNITarget *; }
+-keep class org.mozilla.geckoview.GeckoResult { *; }
+-keep class org.mozilla.geckoview.GeckoResult$* { *; }
+-keep class org.mozilla.geckoview.WebExtension { *; }
+-keep class org.mozilla.geckoview.WebExtension$* { *; }
+-keep class org.mozilla.geckoview.WebExtensionController { *; }
+-keep class org.mozilla.geckoview.WebExtensionController$* { *; }
+-keep class * implements org.mozilla.geckoview.WebExtensionController$PromptDelegate { *; }
+-keep class * implements org.mozilla.geckoview.WebExtension$TabDelegate { *; }
+-keep class * implements org.mozilla.geckoview.WebExtension$ActionDelegate { *; }
+-keep class * implements org.mozilla.geckoview.WebExtension$DownloadDelegate { *; }
+-keep class * implements org.mozilla.geckoview.WebExtension$MessageDelegate { *; }
+-keep class * implements org.mozilla.geckoview.WebExtension$BrowsingDataDelegate { *; }
+-keep class * implements org.mozilla.geckoview.WebExtension$PortDelegate { *; }
+-keep class org.mozilla.geckoview.ContentBlocking$Settings { *; }
+-keep class org.mozilla.geckoview.GeckoRuntimeSettings { *; }
+-keep class org.mozilla.geckoview.GeckoRuntimeSettings$Builder { *; }
+-keep class org.mozilla.geckoview.GeckoSession { *; }
+-keep class org.mozilla.geckoview.GeckoSession$* { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$ProgressDelegate { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$NavigationDelegate { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$ContentDelegate { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$PermissionDelegate { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$PromptDelegate { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$MediaDelegate { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$SelectionActionDelegate { *; }
+-keep class * implements org.mozilla.geckoview.GeckoSession$HistoryDelegate { *; }
+-keep class * implements org.mozilla.geckoview.Autocomplete$StorageDelegate { *; }
+-keep class org.mozilla.geckoview.Autocomplete$LoginEntry { *; }
+-keep class org.mozilla.geckoview.WebExtension$PermissionPromptResponse { *; }
+-keep class com.devilnihad.nexabrowser.browser.BrowserViewModel$Pending* { *; }
+# Keep all native method bindings (JNI) — R8 strips these by default, breaking GeckoView
+-keepclasseswithmembernames class * { native <methods>; }
+# Keep any subclasses of GeckoView (e.g. anonymous classes created in Compose AndroidView)
+-keep class * extends org.mozilla.geckoview.GeckoView { *; }
+-keepclassmembers class org.mozilla.geckoview.GeckoView { *; }
+-dontwarn org.mozilla.**
+-dontnote  org.mozilla.**
+
+# 1b. SnakeYAML — used by GeckoView's DebugConfig.fromFile() to parse the
+# geckoview-config.yaml the app writes for GeckoRuntimeSettings. R8 renames /
+# merges org.yaml.snakeyaml.TypeDescription so its static initializer's
+# getPackage().getName() returns null -> ExceptionInInitializerError ->
+# GeckoRuntime.create() throws -> launch crash-loop. Keep it fully intact.
+-keep class org.yaml.snakeyaml.** { *; }
+-keepattributes Signature,InnerClasses,EnclosingMethod,SourceFile,LineNumberTable,*Annotation*
+-dontwarn org.yaml.snakeyaml.**
+
+# 2. SQLCipher + Room
+-keep class net.zetetic.database.sqlcipher.** { *; }
+-keep class net.sqlcipher.** { *; }
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn net.zetetic.**
+-dontwarn net.sqlcipher.**
+
+# 3. WireGuard VPN
+-keep class com.wireguard.android.backend.Tunnel { *; }
+-keep class com.wireguard.android.backend.Tunnel$* { *; }
+-dontwarn com.wireguard.**
+
+# 4. ML Kit warnings suppression
+-dontwarn com.google.mlkit.**
+-dontwarn com.google.android.gms.internal.mlkit_**
+
+# 5. Coil
+-dontwarn coil.**
+
+# 6. Strip android.util.Log calls in release builds
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+    public static int wtf(...);
+}
+
+# 7. Kotlin null-check optimization — KEEP CRITICAL checks
+# Only strip the non-crashing checks; keep parameter and field null guards
+# to prevent NPE crashes when GeckoView returns null unexpectedly
+-assumenosideeffects class kotlin.jvm.internal.Intrinsics {
+    static void checkExpressionValueIsNotNull(java.lang.Object, java.lang.String);
+    static void checkNotNullExpressionValue(java.lang.Object, java.lang.String);
+}
+# These MUST be kept to prevent NPE crashes in release builds
+-keepclassmembers class kotlin.jvm.internal.Intrinsics {
+    static void checkParameterIsNotNull(java.lang.Object, java.lang.String);
+    static void checkNotNullParameter(java.lang.Object, java.lang.String);
+    static void checkFieldIsNotNull(java.lang.Object, java.lang.String, java.lang.String);
+    static void checkReturnedValueIsNotNull(java.lang.Object, java.lang.Object, java.lang.String);
+}
+-dontwarn kotlin.coroutines.jvm.internal.SpillingKt
+
+# 8. R8 optimization passes
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 3
+
+# 9. Compose — consumer rules handled by Compose runtime & AGP
+-dontwarn androidx.compose.**
+
+# 9b. AndroidX Activity Compose — used by CompositionLocalProvider in MainActivity
+-keep class androidx.activity.compose.** { *; }
+-keepclassmembers class androidx.activity.compose.** { *; }
+-dontwarn androidx.activity.compose.**
+
+# 9c. AndroidX Core / Lifecycle / Fragment — used by FragmentActivity, ViewModel, etc.
+-keep class androidx.core.** { *; }
+-keepclassmembers class androidx.core.** { *; }
+-keep class androidx.lifecycle.** { *; }
+-keepclassmembers class androidx.lifecycle.** { *; }
+-keep class androidx.fragment.** { *; }
+-keepclassmembers class androidx.fragment.** { *; }
+-dontwarn androidx.core.**
+-dontwarn androidx.lifecycle.**
+-dontwarn androidx.fragment.**
+
+# 10. Keep all Compose compiler-generated classes (remember, LaunchedEffect, etc.)
+-keepclassmembers class * {
+    androidx.compose.runtime.Composer *;
+    androidx.compose.runtime.CompositionLocal *;
+}
+
+# 11. Resource shrinking rules
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
+
+# 12. org.json — used for WebExtension message passing
+-keep class org.json.** { *; }
+
+# 13. Third party warnings suppression
+-dontwarn okio.**
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+-dontwarn org.codehaus.mojo.animalsniffer.IgnoreJRERequirement
+
+# 14. Kotlin coroutines — consumer rules handled by kotlinx-coroutines-core
+-dontwarn kotlinx.coroutines.**
+
+# 15. App entry points & Compose UI singletons — R8 can strip the static
+# INSTANCE fields / lambda holders that Compose generates, which leaves the
+# screen blank (black screen) even though the class "exists". Keep them all.
+-keep class com.devilnihad.nexabrowser.MainActivity { *; }
+-keep class com.devilnihad.nexabrowser.MainActivity$* { *; }
+-keep class com.devilnihad.nexabrowser.**.ComposableSingletons* { *; }
+-keep class com.devilnihad.nexabrowser.**.ComposableSingletons*$* { *; }
+
+# 16. Native / JNI bridge classes — these call into bundled .so libraries
+# (FFmpeg, QR decoder). R8 strips native method bindings and the bridge classes
+# themselves, breaking media download/playback and QR scanning at runtime.
+-keep class com.devilnihad.nexabrowser.media.FFmpegBridge { *; }
+-keep class com.devilnihad.nexabrowser.media.FFmpegLoader { *; }
+-keep class com.devilnihad.nexabrowser.media.MediaInterceptor { *; }
+-keep class com.devilnihad.nexabrowser.media.StreamDownloadEngine { *; }
+-keep class com.devilnihad.nexabrowser.tools.qrcode.QrCodeDecoder { *; }
+-keepclasseswithmembernames class * { native <methods>; }
+
+# 17. Privacy / security managers and Room (SQLCipher) DAOs — loaded via the
+# ViewModel and DataStore; keep them so encrypted storage + VPN keep working.
+-keep class com.devilnihad.nexabrowser.privacy.VpnManager { *; }
+-keep class com.devilnihad.nexabrowser.tools.locker.PrivateLockerManager { *; }
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep interface * extends androidx.room.Dao { *; }
+-keepclassmembers class * extends androidx.room.RoomDatabase { *; }
+-keepclassmembers class * extends androidx.room.Dao { *; }
+
+# 18. Built-in WebExtension management — GeckoView instantiates delegate
+# objects from these at runtime; keep the manager + its extension delegates.
+-keep class com.devilnihad.nexabrowser.browser.extensions.** { *; }
+-keep class com.devilnihad.nexabrowser.browser.tabs.** { *; }
+
+# 19. kmp-tor / kmp-process — the embedded Tor daemon and its process
+# management library. kmp-process has a JVM PID path that references
+# java.lang.management.* (ManagementFactory, RuntimeMXBean) which do not
+# exist on Android. At runtime the Android-specific PID path is used instead,
+# so these missing classes are harmless. Tell R8 to not error on them.
+-keep class io.matthewnelson.kmp.tor.** { *; }
+-keep class io.matthewnelson.kmp.process.** { *; }
+-dontwarn java.lang.management.**
+-dontwarn io.matthewnelson.kmp.process.**
+-dontwarn io.matthewnelson.kmp.tor.**

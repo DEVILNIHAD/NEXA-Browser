@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default launcher icon: ring logo on a flat plate color.
+     The foreground PNG is pre-padded so the logo sits fully inside the 66dp
+     adaptive-icon safe zone; every launcher mask (circle, squircle, rounded
+     square) crops only the flat background, never the artwork. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/app_icon_aura_light_bg" />
+    <foreground android:drawable="@drawable/ic_launcher_fg_ring" />
+    <monochrome android:drawable="@drawable/ic_launcher_fg_ring" />
+</adaptive-icon>

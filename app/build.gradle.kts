@@ -1,28 +1,116 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// Single version code for all flavors (Play Store upload).
+val baseVersionCode = 2056
+val baseVersionName = "2.0.0"
 
 android {
     namespace = "com.devilnihad.nexabrowser"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.devilnihad.nexabrowser"
-        minSdk = 23
-        targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = baseVersionCode
+        versionName = baseVersionName
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+    }
+
+    // Allow unit tests to use Android framework methods (e.g. android.util.Log)
+    // without Robolectric by returning default values instead of throwing.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
+    androidResources {
+        // Fixes deprecation: replaces aaptOptions.ignoreAssetsPattern
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~"
+
+        // Restrict bundled translations to only the languages the app actively supports
+        localeFilters += listOf(
+            "en", "hi", "es", "fr", "de", "pt", "pl", "ru", "ja", "zh", "ar", "id", "in"
+        )
+    }
+
+    flavorDimensions.add("abi")
+    productFlavors {
+        create("universal") {
+            dimension = "abi"
+            // Bundles all physical device architectures (ARM64 + ARM32), excluding emulator x86/x86_64
+            ndk {
+                abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+            }
+        }
+        create("arm") {
+            dimension = "abi"
+            ndk {
+                abiFilters.add("armeabi-v7a")
+            }
+        }
+        create("aarch64") {
+            dimension = "abi"
+            ndk {
+                abiFilters.add("arm64-v8a")
+            }
+        }
+    }
+
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        val stream = localPropertiesFile.inputStream()
+        try {
+            localProperties.load(stream)
+        } finally {
+            stream.close()
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("release-new.keystore")
+            storePassword = localProperties.getProperty("keystore.password") ?: System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = localProperties.getProperty("keystore.alias") ?: System.getenv("KEYSTORE_ALIAS") ?: ""
+            keyPassword = localProperties.getProperty("keystore.alias.password") ?: System.getenv("KEYSTORE_ALIAS_PASSWORD") ?: ""
+        }
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         release {
+            // Enable R8 code minification & resource shrinking per Google Play Console recommendation.
+            // Critical keep rules in proguard-rules.pro safeguard GeckoView, Compose, SnakeYAML & SQLCipher.
             isMinifyEnabled = true
+            isShrinkResources = true
+            // Emit native debug symbols so Play Console can symbolicate GeckoView /
+            // SQLCipher NDK crash traces. SYMBOL_TABLE (not FULL) because the
+            // prebuilt .so files ship stripped — this still recovers function
+            // names. Generated at:
+            //   app/build/outputs/native-debug-symbols/<flavor>Release/native-debug-symbols.zip
+            // Upload that zip to Play Console per version; does not require
+            // re-uploading the AAB itself.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -31,14 +119,307 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions { jvmTarget = "17" }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.addAll(
+                "-Xno-param-assertions",
+                "-Xno-call-assertions",
+                "-Xno-receiver-assertions"
+            )
+        }
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = false
+        aidl       = false
+    }
+
+    packaging {
+        jniLibs {
+            // Using `resource-noexec-tor` (JNI shared library) ensures full 16 KB page
+            // alignment compatibility on Android 15+ (API 35+) and avoids native load crashes.
+            useLegacyPackaging = true
+            pickFirsts.addAll(listOf("**/libjsc.so", "**/libc++_shared.so"))
+            excludes.addAll(listOf(
+                "**/libminidump_analyzer.so",
+                "**/libcrashhelper.so",
+                "**/libcrashtools.so",
+                // Strip emulator-only ABIs from the universal bundle. Play Store already
+                // delivers only the device's own ABI to each user, so these x86/x86_64
+                // slices (incl. GeckoView's ~160 MB libxul.so) only bloat the uploaded
+                // AAB without ever reaching a real phone. arm64-v8a + armeabi-v7a remain.
+                "**/x86/**",
+                "**/x86_64/**"
+            ))
+        }
+        resources {
+            excludes += listOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/DEPENDENCIES",
+                "/META-INF/LICENSE",
+                "/META-INF/LICENSE.txt",
+                "/META-INF/NOTICE",
+                "/META-INF/NOTICE.txt",
+                "/META-INF/LICENSE.md",
+                "/META-INF/NOTICE.md",
+                "/META-INF/*.kotlin_module",
+                "/*.kotlin_metadata",
+                "/kotlin/**",
+                "/kotlinx/**",
+                "**/junit/**",
+                "**/androidx/test/**",
+                "**/VERSION.txt",
+                "**/version.txt",
+                "**/*.proto",
+                "**/*.bin"
+            )
+        }
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+}
+
+// Disable AAR metadata checks that interfere with GeckoView / Mozilla libraries
+tasks.configureEach {
+    if (name.startsWith("check") && name.endsWith("AarMetadata")) {
+        enabled = false
+    }
+}
+tasks.matching { it.name.startsWith("check") && it.name.endsWith("AarMetadata") }.configureEach {
+    enabled = false
+}
+
+// ── Per-flavor versionCode offset ─────────────────────────────────────────────
+    // All three flavor APKs share the same versionCode (the highest offset) so that
+    // users who installed the universal APK can switch to the arm-only or aarch64
+    // APK on a future install without a version downgrade error.
+    androidComponents {
+        onVariants { variant ->
+            val versionOffset = 3000000
+            variant.outputs.forEach { output ->
+                output.versionCode.set(baseVersionCode + versionOffset)
+            }
+        }
+    }
+
+// Exclude io.opencensus transitive dependencies pulled in by io.grpc.
+// These libraries are telemetry/tracing stubs and are not used by the app
+// at runtime. F-Droid scanner flags them as "Tracker" anti-features.
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion("2.2.10")
+        }
+    }
+    exclude(group = "io.opencensus", module = "opencensus-api")
+    exclude(group = "io.opencensus", module = "opencensus-proto")
+    exclude(group = "io.opencensus", module = "opencensus-contrib-grpc-metrics")
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.activity:activity-ktx:1.10.0")
-    implementation("androidx.webkit:webkit:1.12.1")
-    implementation("com.google.android.material:material:1.12.0")
+    // === Core Android & Lifecycle ===
+    implementation("androidx.core:core-ktx:1.13.1")
+
+    // === Unit Testing ===
+    // JUnit 4 powers the JVM unit test suite (app/src/test). Required so the
+    // project's existing SecurityPolicyTest and the new Offline AI tests compile
+    // and run under `./gradlew test`.
     testImplementation("junit:junit:4.13.2")
+    // org.json for JVM unit tests (mirrors Android's org.json API)
+    testImplementation("org.json:json:20231013")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
+    implementation("androidx.activity:activity-compose:1.10.1")
+
+    // === Mozilla GeckoView Engine (Architecture-specific) ===
+    val geckoviewVersion = "154.0.20260824154132"
+
+    // Universal flavor: single artifact (avoids capability collision between ABIs)
+    "universalImplementation"("org.mozilla.geckoview:geckoview:$geckoviewVersion")
+
+    // Architecture-specific flavors
+    "armImplementation"("org.mozilla.geckoview:geckoview-armeabi-v7a:$geckoviewVersion")
+    "aarch64Implementation"("org.mozilla.geckoview:geckoview-arm64-v8a:$geckoviewVersion")
+
+    // Mozilla Application Services (Firefox Accounts / Firefox Sync) is
+    // intentionally NOT bundled: Mozilla grants FxA OAuth + Sync access only on
+    // request and not to third-party browsers, so the stack could never work and
+    // only added ~100MB of unused Rust artifacts. See sync/ and README.
+
+    // === In-app BitTorrent engine (jlibtorrent) for magnet/torrent downloading ===
+    implementation("com.frostwire:jlibtorrent:1.2.0.18")
+    "universalImplementation"("com.frostwire:jlibtorrent-android-arm:1.2.0.18")
+    "universalImplementation"("com.frostwire:jlibtorrent-android-arm64:1.2.0.18")
+    "armImplementation"("com.frostwire:jlibtorrent-android-arm:1.2.0.18")
+    "aarch64Implementation"("com.frostwire:jlibtorrent-android-arm64:1.2.0.18")
+
+    // === Jetpack Compose ===
+    implementation(platform("androidx.compose:compose-bom:2024.09.03"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.navigation:navigation-compose:2.8.4")
+    // ui-tooling-preview only needed in debug — never include in release APK
+    debugImplementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // === Haze Glassmorphism Backdrop Blur ===
+    implementation("dev.chrisbanes.haze:haze:0.7.3")
+
+    // === QR / Barcode ===
+    // ZXing: QR code decoder and generator (pure open-source FOSS, no play services)
+    implementation("com.google.zxing:core:3.5.3")
+
+    // === Security & Storage ===
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("com.wireguard.android:tunnel:1.0.20260102")
+
+    // === Embedded Tor (kmp-tor) ===
+    // Runs a real Tor daemon in-process using `resource-noexec-tor` (JNI shared lib).
+    // This maintains 16 KB page alignment compatibility for Android 15+ & GeckoView.
+    implementation("io.matthewnelson.kmp-tor:runtime:2.6.0")
+    implementation("io.matthewnelson.kmp-tor:resource-noexec-tor:409.5.0")
+
+    // === Room + SQLCipher Encrypted DB ===
+    implementation("androidx.room:room-runtime:2.7.1")
+    implementation("androidx.room:room-ktx:2.7.1")
+    ksp("androidx.room:room-compiler:2.7.1")
+    implementation("net.zetetic:sqlcipher-android:4.6.1")
+    implementation("androidx.sqlite:sqlite-ktx:2.4.0")
+
+    // === WorkManager — keeps model downloads alive after the user leaves Settings ===
+    // Downloads are long-running and must not depend on a Compose screen's lifecycle.
+    implementation("androidx.work:work-runtime:2.9.1")
+
+
+    // === Image Loading ===
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.coil-kt:coil-gif:2.7.0")
+    implementation("io.coil-kt:coil-svg:2.7.0")
+
+    // === AndroidX Media3 / ExoPlayer ===
+    val media3Version = "1.3.1"
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
+    implementation("androidx.media3:media3-session:$media3Version")
+    implementation("androidx.media3:media3-exoplayer-hls:$media3Version")
+
+    // === Vosk on-device speech recognition (runtime lib, no model weights) ===
+    // Loads downloaded/verified models from application-private storage.
+    implementation("com.alphacephei:vosk-android:0.3.75")
+
+    // === CameraX ===
+    val cameraxVersion = "1.4.0"
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // === ML Kit On-Device Text Recognition V2 (Manga & Image OCR) ===
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
+}
+
+tasks.register("checkStringParity") {
+    group = "verification"
+    description = "Verifies that all values-*/strings.xml files contain all keys from values/strings.xml"
+    doLast {
+        val resDir = file("src/main/res")
+        val mainStringsFile = file("src/main/res/values/strings.xml")
+        check(mainStringsFile.exists()) { "Main strings.xml not found!" }
+
+        fun extractKeys(f: File): Set<String> {
+            val regex = """<string\s+name="([^"]+)"""".toRegex()
+            return regex.findAll(f.readText()).map { it.groupValues[1] }.toSet()
+        }
+
+        val baseKeys = extractKeys(mainStringsFile)
+        var missingFound = false
+
+        resDir.listFiles()?.filter { it.isDirectory && it.name.startsWith("values-") && !it.name.contains("night") && !it.name.contains("v31") }?.forEach { dir ->
+            val stringsFile = File(dir, "strings.xml")
+            if (stringsFile.exists()) {
+                val localeKeys = extractKeys(stringsFile)
+                val missing = baseKeys - localeKeys
+                if (missing.isNotEmpty()) {
+                    println("❌ ${dir.name}/strings.xml is missing ${missing.size} keys: $missing")
+                    missingFound = true
+                }
+            }
+        }
+
+        if (missingFound) {
+            throw GradleException("String key parity check failed! Fill in missing locale keys.")
+        } else {
+            println("✅ All locale resource files have 100% key parity with values/strings.xml (${baseKeys.size} keys).")
+        }
+    }
+}
+
+// ── 16 KB page-size alignment fix for prebuilt native libraries ────────────────
+// Android 15+ (16 KB page size) requires every .so ELF program header p_align
+// to be >= 16 KB (0x4000). Prebuilt libraries (GeckoView, jlibtorrent, SQLCipher,
+// Tor, WireGuard, Vosk, etc.) were compiled with 4 KB alignment. This hook patches
+// all merged and stripped .so files before the APK is packaged.
+tasks.whenTaskAdded {
+    if (name.startsWith("strip") && name.endsWith("DebugSymbols")) {
+        doLast {
+            val script = file("elf-align-16kb.py")
+            if (script.exists()) {
+                val strippedDir = file("build/intermediates/stripped_native_libs")
+                if (strippedDir.exists()) {
+                    ProcessBuilder("python3", script.absolutePath, strippedDir.absolutePath)
+                        .inheritIO()
+                        .start()
+                        .waitFor()
+                }
+            }
+        }
+    } else if (name.startsWith("merge") && name.endsWith("NativeLibs")) {
+        doLast {
+            val script = file("elf-align-16kb.py")
+            if (script.exists()) {
+                val mergedDir = file("build/intermediates/merged_native_libs")
+                if (mergedDir.exists()) {
+                    ProcessBuilder("python3", script.absolutePath, mergedDir.absolutePath)
+                        .inheritIO()
+                        .start()
+                        .waitFor()
+                }
+            }
+        }
+    } else if (name.startsWith("package") && !name.contains("Resource") && !name.contains("Manifest")) {
+        doFirst {
+            val script = file("elf-align-16kb.py")
+            if (script.exists()) {
+                val intermediates = file("build/intermediates")
+                if (intermediates.exists()) {
+                    val strippedDir = file("build/intermediates/stripped_native_libs")
+                    if (strippedDir.exists()) {
+                        ProcessBuilder("python3", script.absolutePath, strippedDir.absolutePath)
+                            .inheritIO()
+                            .start()
+                            .waitFor()
+                    }
+                    val mergedDir = file("build/intermediates/merged_native_libs")
+                    if (mergedDir.exists()) {
+                        ProcessBuilder("python3", script.absolutePath, mergedDir.absolutePath)
+                            .inheritIO()
+                            .start()
+                            .waitFor()
+                    }
+                }
+            }
+        }
+    }
 }

@@ -1,5 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="nexa_primary">#6C63FF</color>
-    <color name="nexa_surface">#F7F7FB</color>
-    <color name="nexa_dark">#0B0B10</color>
+    <color name="slaty_black">#070A0F</color>
+    <color name="white">#FFFFFF</color>
+    <!-- Splash / cold-start window background for light (day) mode. The night
+         variant lives in values-night/colors.xml. The base theme references this
+         so the system splash drawn before onCreate always pairs with a visible
+         logo (dark logo on this light bg). -->
+    <color name="splash_bg">#FFFFFF</color>
+    <color name="app_icon_dark_bg">#1C1C1E</color>
+    <color name="app_icon_light_bg">#FFFFFF</color>
+    <color name="app_icon_blue_bg">#52D6FF</color>
+    <color name="app_icon_gold_bg">#FFB800</color>
+    <!-- Launcher icon plate colors (adaptive-icon background layers). Sampled
+         from the source artworks so the mask crop blends with the ring. -->
+    <color name="app_icon_aura_light_bg">#F3F7FF</color>
+    <color name="app_icon_aura_dark_bg">#0A1020</color>
 </resources>

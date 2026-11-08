@@ -1,461 +1,1201 @@
+/*
+ * NEXA Browser - A premium, private, and secure web browser.
+ * Copyright (C) 2026 RebelRoot Ltd
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.devilnihad.nexabrowser
 
-import android.app.Activity
-import android.content.Intent
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
-import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
-import android.webkit.CookieManager
-import android.webkit.ValueCallback
-import android.webkit.WebView
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import android.content.res.ColorStateList
-import androidx.core.view.WindowCompat
-import com.devilnihad.nexabrowser.data.BookmarkManager
-import com.devilnihad.nexabrowser.data.HistoryManager
-import com.devilnihad.nexabrowser.data.SettingsManager
-import com.devilnihad.nexabrowser.data.Tab
-import com.devilnihad.nexabrowser.data.TabManager
-import com.devilnihad.nexabrowser.utils.UrlResolver
-import com.devilnihad.nexabrowser.web.WebViewManager
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputEditText
-import java.util.Locale
+import androidx.annotation.Keep
 
-class MainActivity : AppCompatActivity() {
-    private lateinit var root: LinearLayout
-    private lateinit var webContainer: FrameLayout
-    private lateinit var address: EditText
-    private lateinit var progress: View
-    private lateinit var history: HistoryManager
-    private lateinit var bookmarks: BookmarkManager
-    private lateinit var settings: SettingsManager
+import androidx.core.content.ContextCompat
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.devilnihad.nexabrowser.browser.BrowserScreen
+import com.devilnihad.nexabrowser.browser.BrowserViewModel
+import com.devilnihad.nexabrowser.browser.setupTabSessionListeners
+import com.devilnihad.nexabrowser.browser.session.SessionRecoveryDiagnostics
+import com.devilnihad.nexabrowser.browser.IntentUrlParser
+import com.devilnihad.nexabrowser.media.DownloadManagerScreen
+import com.devilnihad.nexabrowser.media.player.VideoPlayerScreen
+import com.devilnihad.nexabrowser.settings.SettingsScreen
+import com.devilnihad.nexabrowser.settings.AppearanceScreen
+import com.devilnihad.nexabrowser.settings.ButtonsLayoutScreen
+import com.devilnihad.nexabrowser.settings.ThemeScreen
+import com.devilnihad.nexabrowser.settings.WallpaperScreen
+import com.devilnihad.nexabrowser.settings.PrivacyHubScreen
+import com.devilnihad.nexabrowser.history.HistoryScreen
+import com.devilnihad.nexabrowser.bookmarks.BookmarksScreen
+import com.devilnihad.nexabrowser.tools.locker.PrivateLockerScreen
+import com.devilnihad.nexabrowser.tools.qrcode.QrToolsScreen
+import com.devilnihad.nexabrowser.ui.theme.OmniTheme
+import java.io.File
+import com.devilnihad.nexabrowser.browser.dataStore
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 
-    private val tabs = TabManager()
-    private var fileCallback: ValueCallback<Array<Uri>>? = null
+class MainActivity : FragmentActivity() {
 
-    private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val callback = fileCallback
-        fileCallback = null
-        val uri = result.data?.data
-        callback?.onReceiveValue(if (result.resultCode == Activity.RESULT_OK && uri != null) arrayOf(uri) else null)
+    private val browserViewModel: BrowserViewModel by viewModels()
+
+    // Runtime notification permission launcher (Android 13+)
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* granted or denied — no action needed, engine checks at post time */ }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val lang = try {
+            val sp = newBase.getSharedPreferences("omni_prefs", android.content.Context.MODE_PRIVATE)
+            sp.getString("selected_language", "en") ?: "en"
+        } catch (e: Exception) {
+            "en"
+        }
+        
+        val locale = java.util.Locale.forLanguageTag(lang)
+        java.util.Locale.setDefault(locale)
+        val config = android.content.res.Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        config.setLayoutDirection(locale)
+        val context = newBase.createConfigurationContext(config)
+        super.attachBaseContext(context)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val themeState = ThemeStateHolder
+        val isSystemDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val effectiveStartupDark = if (themeState.followSystemTheme) isSystemDark else themeState.darkThemeEnabled
+        val themeRes = when {
+            effectiveStartupDark && themeState.amoledMode -> R.style.Theme_OmniBrowser_Amoled
+            effectiveStartupDark -> R.style.Theme_OmniBrowser_Dark
+            else -> R.style.Theme_OmniBrowser_Light
+        }
+        setTheme(themeRes)
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        activeActivity = java.lang.ref.WeakReference(this)
+
+        // --- Critical fix for PrintManager ("Can print only from an activity") ---
+        // When attachBaseContext() swaps the base context with createConfigurationContext(),
+        // the Android framework calls setOuterContext(activity) only on the ORIGINAL base
+        // context, not on our replacement ContextImpl. This causes getSystemService(PRINT_SERVICE)
+        // to create a PrintManager bound to a raw ContextImpl (not this Activity), making
+        // PrintManager.print() throw "Can print only from an activity".
+        // We fix it here by explicitly setting the outer context of our replacement ContextImpl
+        // to this Activity, exactly mirroring what Activity.attach() does for the original context.
+        try {
+            val m = baseContext.javaClass.getDeclaredMethod(
+                "setOuterContext", android.content.Context::class.java
+            )
+            m.isAccessible = true
+            m.invoke(baseContext, this)
+            android.util.Log.i("MainActivity", "✅ ContextImpl outer context fixed for PrintManager")
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivity", "⚠️ Could not fix ContextImpl outer context: $e")
+        }
+        // -------------------------------------------------------------------------
+
+        // --- Global Robust Uncaught Exception Handler (with crash-loop protection) ---
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            android.util.Log.e("OMNI_CRASH", "🚨 Uncaught Exception in thread ${thread.name}!", throwable)
+            android.util.Log.e("GeckoConsole", "🚨 OMNI_CRASH in thread ${thread.name}: ${throwable.stackTraceToString()}")
+            val crashPrefs = getSharedPreferences("omni_crash_prefs", android.content.Context.MODE_PRIVATE)
+            val crashMsg = throwable.localizedMessage ?: throwable.toString()
+            crashPrefs.edit().putString("last_crash_msg", crashMsg).apply()
+
+            // Crash-loop detection: count consecutive crashes within a 60s window
+            val now = System.currentTimeMillis()
+            val lastCrashTime = crashPrefs.getLong("last_crash_time", 0)
+            var crashCount = crashPrefs.getInt("crash_loop_count", 0)
+            if (now - lastCrashTime < 60_000) {
+                crashCount++
+            } else {
+                crashCount = 1
+            }
+            crashPrefs.edit()
+                .putLong("last_crash_time", now)
+                .putInt("crash_loop_count", crashCount)
+                .apply()
+
+            if (crashCount >= 3) {
+                // Crash loop detected — stop auto-restarting, exit cleanly
+                android.util.Log.e("OMNI_CRASH", "Crash loop detected ($crashCount crashes). Not restarting.")
+                crashPrefs.edit().putInt("crash_loop_count", 0).apply()
+                android.os.Process.killProcess(android.os.Process.myPid())
+                java.lang.System.exit(1)
+                return@setDefaultUncaughtExceptionHandler
+            }
+
+            val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            startActivity(intent)
+            android.os.Process.killProcess(android.os.Process.myPid())
+            java.lang.System.exit(10)
+        }
+
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        history = HistoryManager(this)
-        bookmarks = BookmarkManager(this)
-        settings = SettingsManager(this)
-        applyTheme()
-        buildUi()
+        requestNotificationPermissionIfNeeded()
 
-        val restoredUrls = savedInstanceState?.getStringArrayList(STATE_TAB_URLS)
-        val restoredCurrent = savedInstanceState?.getInt(STATE_CURRENT_TAB, 0) ?: 0
-        if (restoredUrls.isNullOrEmpty()) createTab(false)
-        else {
-            restoredUrls.forEach { createTab(false, it) }
-            tabs.all().getOrNull(restoredCurrent)?.id?.let(::switchTo)
+        // App started successfully — reset the crash-loop counter so that
+        // an isolated crash later doesn't count toward the rapid-restart threshold.
+        getSharedPreferences("omni_crash_prefs", android.content.Context.MODE_PRIVATE)
+            .edit().putInt("crash_loop_count", 0).apply()
+
+        // Pre-apply persisted theme values to ViewModel so Compose renders
+        // with the correct theme on the very first frame (no white flash).
+        browserViewModel.isDarkThemeEnabled = themeState.darkThemeEnabled
+        browserViewModel.isAmoledMode = themeState.amoledMode
+        browserViewModel.selectedAccentTheme = themeState.accentTheme
+        browserViewModel.isDynamicColorEnabled = themeState.dynamicColorEnabled
+        browserViewModel.followSystemTheme = themeState.followSystemTheme
+
+        val intentAction = intent?.action
+        val intentUrl = IntentUrlParser.parseIntent(intent, this)
+
+        val isExternal = intentAction == android.content.Intent.ACTION_VIEW ||
+            intentAction == android.content.Intent.ACTION_SEND ||
+            intentAction == android.content.Intent.ACTION_WEB_SEARCH ||
+            intentAction == android.content.Intent.ACTION_PROCESS_TEXT ||
+            (!intentUrl.isNullOrEmpty() && intentAction != null)
+
+        if (isExternal) {
+            android.util.Log.i("MainActivity", "🚀 External intent launch detected (action=$intentAction): $intentUrl")
+            browserViewModel.isExternalIntentLaunch = true
         }
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val current = tabs.current()
-                val currentWeb = current?.webView
-                when {
-                    currentWeb?.canGoBack() == true -> currentWeb.goBack()
-                    current != null && tabs.size() > 1 -> closeTab(current.id)
-                    else -> finish()
+        val isDirectVideo = !intentUrl.isNullOrEmpty() && (intentUrl.contains("autoplay=native") || intentUrl.endsWith(".mp4"))
+        if (!intentUrl.isNullOrEmpty()) {
+            if (isDirectVideo && browserViewModel.isNativePlayerEnabled) {
+                browserViewModel.pendingVideoUrl = intentUrl
+            } else if (intent?.getBooleanExtra(com.devilnihad.nexabrowser.browser.IntentUrlParser.EXTRA_EXTENSION_SHORTCUT, false) == true) {
+                // Extension shortcut: open in a fresh tab instead of replacing the active tab.
+                android.util.Log.i("MainActivity", "🎬 onCreate extension shortcut URL detected: $intentUrl")
+                browserViewModel.pendingExtensionShortcutUrl = intentUrl
+            } else {
+                android.util.Log.i("MainActivity", "🎬 onCreate intent URL detected: $intentUrl")
+                browserViewModel.pendingIntentUrl = intentUrl
+            }
+        }
+
+        val openDownloadsExtra = intent?.getBooleanExtra("extra_open_downloads", false) == true ||
+            intentAction == "com.devilnihad.nexabrowser.ACTION_OPEN_DOWNLOADS"
+        if (openDownloadsExtra) {
+            browserViewModel.triggerOpenDownloadsScreen()
+        }
+
+        // Extension home-screen shortcut launch: ensure the extension is enabled and open the browser.
+        val extensionShortcutId = intent?.getStringExtra("extra_extension_id")
+        if (!extensionShortcutId.isNullOrBlank()) {
+            android.util.Log.i("MainActivity", "📌 Extension shortcut launch: $extensionShortcutId")
+            browserViewModel.handleExtensionShortcutLaunch(extensionShortcutId, this)
+        }
+
+        setContent {
+            val context = LocalContext.current
+            val currentLanguage = browserViewModel.selectedLanguageCode
+            val localizedContext = remember(currentLanguage, context) {
+                val locale = java.util.Locale.forLanguageTag(currentLanguage)
+                java.util.Locale.setDefault(locale)
+                val config = android.content.res.Configuration(context.resources.configuration)
+                config.setLocale(locale)
+                config.setLayoutDirection(locale)
+                @Suppress("DEPRECATION")
+                context.resources.updateConfiguration(config, context.resources.displayMetrics)
+                val configContext = context.createConfigurationContext(config)
+                object : android.content.ContextWrapper(this@MainActivity) {
+                    override fun getResources(): android.content.res.Resources = configContext.resources
+                    override fun getAssets(): android.content.res.AssetManager = configContext.assets
                 }
             }
-        })
-    }
 
-    private fun buildUi() {
-        root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(resolveColor(com.google.android.material.R.attr.colorSurface))
-            setPadding(dp(12), dp(30), dp(12), dp(10))
-        }
+            val systemInDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val effectiveDarkTheme = if (browserViewModel.followSystemTheme) systemInDark else browserViewModel.isDarkThemeEnabled
+            val effectiveAmoledMode = if (browserViewModel.followSystemTheme) (browserViewModel.isAmoledMode && systemInDark) else browserViewModel.isAmoledMode
+            val effectiveCreamyMode = if (browserViewModel.followSystemTheme) (browserViewModel.isCreamyMode && !systemInDark) else browserViewModel.isCreamyMode
 
-        root.addView(buildTopBar(), LinearLayout.LayoutParams(-1, dp(60)))
-
-        progress = View(this).apply {
-            setBackgroundColor(resolveColor(com.google.android.material.R.attr.colorPrimary))
-            visibility = View.GONE
-        }
-        root.addView(progress, LinearLayout.LayoutParams(-1, dp(2)))
-
-        webContainer = FrameLayout(this).apply {
-            setBackgroundColor(resolveColor(com.google.android.material.R.attr.colorSurface))
-        }
-        root.addView(webContainer, LinearLayout.LayoutParams(-1, 0, 1f))
-        root.addView(buildBottomBar(), LinearLayout.LayoutParams(-1, dp(72)))
-        setContentView(root)
-
-        address.setOnEditorActionListener { _, _, _ -> loadAddress(); true }
-    }
-
-    private fun buildTopBar(): View {
-        val row = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-        }
-
-        val shell = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), 0, dp(6), 0)
-            background = rounded(resolveColor(com.google.android.material.R.attr.colorSurfaceContainerHigh), 22)
-            elevation = dp(2).toFloat()
-        }
-
-        val secure = ImageButton(this).apply {
-            setImageResource(R.drawable.ic_lock)
-            background = null
-            contentDescription = "Security"
-            imageTintList = ColorStateList.valueOf(resolveColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
-            setPadding(dp(6), dp(6), dp(6), dp(6))
-        }
-        shell.addView(secure, LinearLayout.LayoutParams(dp(34), dp(46)))
-
-        address = EditText(this).apply {
-            hint = getString(R.string.search_hint)
-            setSingleLine(true)
-            textSize = 15f
-            setTextColor(resolveColor(com.google.android.material.R.attr.colorOnSurface))
-            setHintTextColor(resolveColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
-            background = null
-            setPadding(dp(4), 0, dp(4), 0)
-            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_GO
-        }
-        shell.addView(address, LinearLayout.LayoutParams(0, -1, 1f))
-
-        val refresh = iconButton(R.drawable.ic_refresh, "Refresh") { currentWeb()?.reload() }
-        shell.addView(refresh, LinearLayout.LayoutParams(dp(44), dp(46)))
-
-        row.addView(shell, LinearLayout.LayoutParams(0, dp(52), 1f).apply { setMargins(0, 0, dp(8), 0) })
-        row.addView(iconButton(R.drawable.ic_more, "Menu") { showMenu() }, LinearLayout.LayoutParams(dp(48), dp(52)))
-        return row
-    }
-
-    private fun buildBottomBar(): View {
-        val outer = FrameLayout(this)
-        val bar = LinearLayout(this).apply {
-            gravity = Gravity.CENTER
-            setPadding(dp(8), dp(7), dp(8), dp(7))
-            background = rounded(resolveColor(com.google.android.material.R.attr.colorSurfaceContainer), 28)
-            elevation = dp(5).toFloat()
-        }
-
-        fun nav(icon: Int, desc: String, action: () -> Unit): ImageButton = iconButton(icon, desc, 52, action)
-        bar.addView(nav(R.drawable.ic_back, "Back") { currentWeb()?.let { if (it.canGoBack()) it.goBack() } })
-        bar.addView(nav(R.drawable.ic_forward, "Forward") { currentWeb()?.let { if (it.canGoForward()) it.goForward() } })
-        bar.addView(nav(R.drawable.ic_home, "Home") { loadHome() })
-
-        val tabButton = nav(R.drawable.ic_tabs, "Tabs") { showTabs() }
-        bar.addView(tabButton)
-        bar.addView(nav(R.drawable.ic_plus, "New tab") { createTab(false) })
-
-        outer.addView(bar, FrameLayout.LayoutParams(-1, dp(58)).apply {
-            gravity = Gravity.CENTER
-            leftMargin = dp(2); rightMargin = dp(2)
-        })
-        return outer
-    }
-
-    private fun iconButton(icon: Int, desc: String, size: Int = 48, action: () -> Unit): ImageButton = ImageButton(this).apply {
-        setImageResource(icon)
-        background = rounded(Color.TRANSPARENT, 18)
-        setPadding(dp(12), dp(12), dp(12), dp(12))
-        contentDescription = desc
-        imageTintList = ColorStateList.valueOf(resolveColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
-        setOnClickListener { action() }
-        layoutParams = LinearLayout.LayoutParams(dp(size), dp(48))
-    }
-
-    private fun rounded(color: Int, radius: Int): GradientDrawable = GradientDrawable().apply {
-        setColor(color)
-        cornerRadius = dp(radius).toFloat()
-    }
-
-    private fun createTab(privateMode: Boolean, url: String = "about:home") {
-        val tab = tabs.create(privateMode)
-        val web = WebView(this)
-        tab.webView = web
-        webContainer.addView(web, FrameLayout.LayoutParams(-1, -1))
-        configureWebView(tab)
-        switchTo(tab.id)
-        if (url == "about:home") loadHome() else web.loadUrl(url)
-    }
-
-    private fun configureWebView(tab: Tab) {
-        val web = tab.webView ?: return
-        WebViewManager(
-            activity = this,
-            privateMode = tab.privateMode,
-            onUrl = { url ->
-                tab.url = url
-                if (tabs.currentId == tab.id) address.setText(if (url.startsWith("about:")) "" else url)
-                if (!tab.privateMode) history.add(tab.title, url)
-            },
-            onTitle = { title -> tab.title = title.ifBlank { "New tab" } },
-            onProgress = { value ->
-                if (tabs.currentId == tab.id) {
-                    progress.visibility = if (value in 1..99) View.VISIBLE else View.GONE
-                    progress.scaleX = value / 100f
+            LaunchedEffect(effectiveDarkTheme, browserViewModel.followSystemTheme, systemInDark) {
+                if (browserViewModel.followSystemTheme) {
+                    browserViewModel.isDarkThemeEnabled = effectiveDarkTheme
+                    if (!systemInDark) {
+                        browserViewModel.isAmoledMode = false
+                        browserViewModel.isCreamyMode = false
+                    }
                 }
-            },
-            onFileChooser = { callback, intent -> openFileChooser(callback, intent) }
-        ).configure(web, settings.desktopSite)
-    }
-
-    private fun switchTo(id: Long) {
-        if (!tabs.select(id)) return
-        tabs.all().forEach { tab -> tab.webView?.visibility = if (tab.id == id) View.VISIBLE else View.GONE }
-        val tab = tabs.current() ?: return
-        address.setText(if (tab.url == "about:home" || tab.url == "about:blank") "" else tab.url)
-        progress.visibility = View.GONE
-    }
-
-    private fun currentWeb(): WebView? = tabs.current()?.webView
-
-    private fun loadHome() {
-        val dark = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
-        val bg = if (dark) "#0B0D12" else "#F7F8FC"
-        val card = if (dark) "#151821" else "#FFFFFF"
-        val text = if (dark) "#F7F8FA" else "#171923"
-        val muted = if (dark) "#9BA1AF" else "#707583"
-        val html = """
-            <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-            <style>
-            *{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:$bg;color:$text;margin:0;padding:48px 22px 40px}
-            .wrap{max-width:720px;margin:auto}.brand{font-size:48px;font-weight:900;letter-spacing:-3px}.tag{color:$muted;font-size:14px;margin-top:4px}
-            .search{margin-top:30px;background:$card;border:1px solid rgba(127,127,127,.12);border-radius:25px;padding:16px 18px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
-            .search span{color:$muted}.section{margin:32px 0 13px;font-size:13px;font-weight:800;letter-spacing:.5px;color:$muted;text-transform:uppercase}
-            .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.item{display:block;padding:18px;border-radius:22px;background:$card;text-decoration:none;color:$text;border:1px solid rgba(127,127,127,.10)}
-            .dot{width:10px;height:10px;border-radius:50%;background:#6C63FF;display:inline-block;margin-right:8px}.name{font-weight:750}.url{font-size:12px;color:$muted;margin-top:6px}
-            </style></head><body><div class="wrap"><div class="brand">NEXA</div><div class="tag">Fast. Private. Yours.</div>
-            <div class="search"><span>Search the web or enter an address</span></div>
-            <div class="section">Quick access</div><div class="grid">
-            <a class="item" href="https://www.google.com"><div class="name"><span class="dot"></span>Google</div><div class="url">google.com</div></a>
-            <a class="item" href="https://www.youtube.com"><div class="name"><span class="dot"></span>YouTube</div><div class="url">youtube.com</div></a>
-            <a class="item" href="https://github.com"><div class="name"><span class="dot"></span>GitHub</div><div class="url">github.com</div></a>
-            <a class="item" href="https://wikipedia.org"><div class="name"><span class="dot"></span>Wikipedia</div><div class="url">wikipedia.org</div></a>
-            </div></div></body></html>
-        """.trimIndent()
-        val tab = tabs.current() ?: return
-        tab.url = "about:home"
-        tab.title = "NEXA"
-        tab.webView?.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
-        address.setText("")
-    }
-
-    private fun loadAddress() {
-        val target = UrlResolver.resolve(address.text?.toString().orEmpty(), settings.searchEngine)
-        tabs.current()?.url = target
-        currentWeb()?.loadUrl(target)
-    }
-
-    private fun showTabs() {
-        val dialog = BottomSheetDialog(this)
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(14), dp(20), dp(32))
-        }
-        box.addView(TextView(this).apply {
-            text = "Your tabs"
-            textSize = 24f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(resolveColor(com.google.android.material.R.attr.colorOnSurface))
-            setPadding(0, dp(4), 0, dp(4))
-        })
-        box.addView(TextView(this).apply {
-            text = "${tabs.size()} open ${if (tabs.size() == 1) "tab" else "tabs"}"
-            textSize = 13f
-            setTextColor(resolveColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
-            setPadding(0, 0, 0, dp(16))
-        })
-        tabs.all().forEach { tab ->
-            val card = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(16), dp(14), dp(12), dp(14))
-                background = rounded(resolveColor(com.google.android.material.R.attr.colorSurfaceContainerHigh), 20)
             }
-            card.addView(TextView(this).apply {
-                text = if (tab.privateMode) "Private tab" else tab.title.ifBlank { "New tab" }
-                textSize = 15f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            })
-            card.addView(TextView(this).apply {
-                text = if (tab.url.startsWith("about:")) "Start page" else tab.url
-                textSize = 12f
-                maxLines = 1
-                ellipsize = android.text.TextUtils.TruncateAt.END
-                setTextColor(resolveColor(com.google.android.material.R.attr.colorOnSurfaceVariant))
-                setPadding(0, dp(5), 0, 0)
-            })
-            card.setOnClickListener { switchTo(tab.id); dialog.dismiss() }
-            box.addView(card, LinearLayout.LayoutParams(-1, dp(74)).apply { setMargins(0, 0, 0, dp(10)) })
-        }
-        val add = TextView(this).apply {
-            text = "+  New tab"
-            gravity = Gravity.CENTER
-            textSize = 15f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(resolveColor(com.google.android.material.R.attr.colorPrimary))
-            background = rounded(resolveColor(com.google.android.material.R.attr.colorPrimaryContainer), 20)
-            setOnClickListener { createTab(false); dialog.dismiss() }
-        }
-        box.addView(add, LinearLayout.LayoutParams(-1, dp(54)))
-        dialog.setContentView(box)
-        dialog.show()
-    }
 
-    private fun showMenu() {
-        val dialog = BottomSheetDialog(this)
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(14), dp(20), dp(28))
-        }
-        box.addView(TextView(this).apply {
-            text = "NEXA"
-            textSize = 22f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setPadding(0, dp(4), 0, dp(12))
-        })
-        val items = listOf(
-            "New tab" to { createTab(false) },
-            "New private tab" to { createTab(true) },
-            "Bookmarks" to { showBookmarks() },
-            "History" to { showHistory() },
-            "Downloads" to { openDownloads() },
-            "Find in page" to { findInPage() },
-            "Desktop site" to { settings.desktopSite = !settings.desktopSite; recreateCurrentTab() },
-            "Share" to { sharePage() },
-            "Add bookmark" to { tabs.current()?.let { bookmarks.add(it.title, it.url) } },
-            "Settings" to { showSettings() }
-        )
-        items.forEach { (label, action) ->
-            val item = TextView(this).apply {
-                text = label
-                textSize = 15f
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(16), 0, dp(16), 0)
-                background = rounded(Color.TRANSPARENT, 16)
-                setOnClickListener { dialog.dismiss(); action() }
+            val currentDensity = LocalDensity.current
+            val appFontScale = remember(currentDensity.fontScale, browserViewModel.accessibilityTextScale) {
+                (currentDensity.fontScale * browserViewModel.accessibilityTextScale).coerceIn(0.6f, 2.0f)
             }
-            box.addView(item, LinearLayout.LayoutParams(-1, dp(52)).apply { setMargins(0, 0, 0, dp(2)) })
+            val appDensity = remember(currentDensity.density, appFontScale) {
+                Density(
+                    density = currentDensity.density,
+                    fontScale = appFontScale
+                )
+            }
+
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalConfiguration provides localizedContext.resources.configuration,
+                LocalDensity provides appDensity,
+                androidx.activity.compose.LocalActivity provides this@MainActivity,
+                androidx.activity.compose.LocalActivityResultRegistryOwner provides this@MainActivity,
+                androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides this@MainActivity
+            ) {
+                OmniTheme(
+                    darkTheme = effectiveDarkTheme,
+                    accentTheme = browserViewModel.selectedAccentTheme,
+                    amoledMode = effectiveAmoledMode,
+                    creamyMode = effectiveCreamyMode,
+                    dynamicColor = browserViewModel.isDynamicColorEnabled
+                ) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val navController = rememberNavController()
+
+                    // Ensure GeckoRuntime and engines are loaded immediately on app start.
+                    // Guarded with try-catch so a Gecko init failure does not crash the
+                    // entire composition (which would otherwise show a black screen).
+                    var geckoInitFailed by remember { androidx.compose.runtime.mutableStateOf(false) }
+                    if (!geckoInitFailed) {
+                        try {
+                            // NOTE: The return value is intentionally captured and "touched"
+                            // so R8/ProGuard cannot treat this call as dead code. Without it,
+                            // R8 strips getGeckoRuntime() entirely (it sees a discarded result
+                            // and an unobservable field write), leaving GeckoView uninitialized
+                            // and the app showing only the dark window background (black screen).
+                            val rt = browserViewModel.getGeckoRuntime(this)
+                            if (rt == null) throw IllegalStateException("GeckoRuntime unavailable")
+                        } catch (e: Exception) {
+                            android.util.Log.e("MainActivity", "❌ GeckoRuntime init failed", e)
+                            geckoInitFailed = true
+                        }
+                    }
+
+                    // Show a graceful error screen instead of a black screen when
+                    // the GeckoView engine fails to initialize in release builds.
+                    if (geckoInitFailed) {
+                        GeckoErrorScreen(
+                            onRetry = {
+                                geckoInitFailed = false
+                                try {
+                                    val rt = browserViewModel.getGeckoRuntime(this)
+                                    if (rt == null) throw IllegalStateException("GeckoRuntime unavailable")
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "❌ GeckoRuntime retry failed", e)
+                                    geckoInitFailed = true
+                                }
+                            }
+                        )
+                        return@Surface
+                    }
+
+                    // Resolve the start destination asynchronously (DataStore
+                    // read off the main thread) instead of blocking composition
+                    // with runBlocking. A themed blank frame is shown until the
+                    // decision is ready, so the correct destination appears on
+                    // the very first composition — no white flash, no wrong-
+                    // screen flash, no double navigation.
+                    var languageSelectionDone by remember { androidx.compose.runtime.mutableStateOf(false) }
+                    var onboardingCompleted by remember { androidx.compose.runtime.mutableStateOf(false) }
+                    var startDestination by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                        val prefs = context.dataStore.data.first()
+                        languageSelectionDone = prefs[BrowserViewModel.LANGUAGE_SELECTION_DONE_KEY] ?: false
+                        onboardingCompleted = prefs[BrowserViewModel.ONBOARDING_COMPLETED_KEY] ?: false
+                        startDestination = if (isDirectVideo) {
+                            val encodedPath = android.util.Base64.encodeToString(intentUrl!!.toByteArray(), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
+                            android.util.Log.i("MainActivity", "🎬 Startup direct video player route: video_player/$encodedPath")
+                            "video_player/$encodedPath"
+                        } else if (!languageSelectionDone) {
+                            "language_selection"
+                        } else if (!onboardingCompleted) {
+                            "onboarding"
+                        } else {
+                            "browser"
+                        }
+                    }
+
+                    if (startDestination == null) {
+                        // Themed placeholder frame while startup preferences resolve.
+                        androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize())
+                    } else {
+                    val destination = checkNotNull(startDestination)
+                    NavHost(
+                        navController = navController,
+                        startDestination = destination
+                    ) {
+                        // Language Selection Screen (first launch)
+                        composable("language_selection") {
+                            com.devilnihad.nexabrowser.onboarding.LanguageSelectionScreen(
+                                viewModel = browserViewModel,
+                                context = context,
+                                onFinish = {
+                                    val nextRoute = if (!onboardingCompleted) "onboarding" else "browser"
+                                    navController.navigate(nextRoute) {
+                                        popUpTo("language_selection") { inclusive = true }
+                                    }
+                                    this@MainActivity.recreate()
+                                }
+                            )
+                        }
+
+                        // Starting Onboarding Presentation Screen
+                        composable("onboarding") {
+                            com.devilnihad.nexabrowser.onboarding.OnboardingScreen(
+                                viewModel = browserViewModel,
+                                context = context,
+                                onFinish = {
+                                    navController.navigate("browser") {
+                                        popUpTo("onboarding") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        // Core Browser Screen
+                        composable("browser") {
+                            BrowserScreen(
+                                viewModel = browserViewModel,
+                                onOpenLocker = { navController.navigate("locker") },
+                                onOpenQrTools = { navController.navigate("qr_tools") },
+                                onOpenDownloads = { navController.navigate("downloads") },
+                                onOpenSettings = { navController.navigate("settings") },
+                                onOpenPasswordManager = { navController.navigate("password_manager") },
+                                onOpenAppearance = { navController.navigate("appearance") },
+                                onOpenHistory = { navController.navigate("history") },
+                                onOpenBookmarks = { navController.navigate("bookmarks") },
+                                onOpenNewsCenter = { navController.navigate("news") },
+                                onOpenWallpapers = { navController.navigate("wallpapers") },
+                                onOpenVisualBlockSettings = { navController.navigate("visual_block_settings") },
+                                onOpenUserAgentSettings = { navController.navigate("user_agent_settings") },
+                                onOpenWebApps = { navController.navigate("web_apps") },
+                                onPlayOnlineStream = { url, pageUrl ->
+                                    android.util.Log.i("MainActivity", "🎬 onPlayOnlineStream triggered! url=$url, pageUrl=$pageUrl")
+                                    val encodedPath = android.util.Base64.encodeToString(url.toByteArray(), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
+                                    val encodedPageUrl = android.util.Base64.encodeToString(pageUrl.toByteArray(), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
+                                    val route = "video_player/$encodedPath?pageUrl=$encodedPageUrl"
+                                    android.util.Log.i("MainActivity", "🎬 Navigating to: $route")
+                                    navController.navigate(route)
+                                },
+                                onExitBrowser = {
+                                    this@MainActivity.finishAffinity()
+                                }
+                            )
+                        }
+
+                        // Password Manager Screen
+                        composable("password_manager") {
+                            com.devilnihad.nexabrowser.tools.passwords.PasswordManagerScreen(browserViewModel)
+                        }
+
+                        // Sandboxed Encrypted Vault Room
+                        composable("locker") {
+                            PrivateLockerScreen(
+                                activity = this@MainActivity,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // ZXing Generator + Play Services Scanner
+                        composable("qr_tools") {
+                            QrToolsScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenUrlInBrowser = { url ->
+                                    browserViewModel.loadUrl(url)
+                                    navController.popBackStack("browser", inclusive = false)
+                                }
+                            )
+                        }
+
+                        // Video Downloader Manager Screen
+                        composable("downloads") {
+                            DownloadManagerScreen(
+                                engine = browserViewModel.streamDownloadEngine,
+                                onNavigateBack = { navController.popBackStack() },
+                                onPlayVideo = { file ->
+                                    val encodedPath = android.util.Base64.encodeToString(file.absolutePath.toByteArray(), android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
+                                    navController.navigate("video_player/$encodedPath")
+                                },
+                                onOpenSourcePage = { url ->
+                                    browserViewModel.loadUrl(url)
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        // Swipe-gesture Media3 Video Player
+                        composable(
+                            route = "video_player/{filePath}?pageUrl={pageUrl}",
+                            arguments = listOf(
+                                navArgument("filePath") { type = NavType.StringType },
+                                navArgument("pageUrl") { 
+                                    type = NavType.StringType
+                                    defaultValue = ""
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val filePath = backStackEntry.arguments?.getString("filePath") ?: ""
+                            val pageUrlEncoded = backStackEntry.arguments?.getString("pageUrl") ?: ""
+                            val pageUrl = if (pageUrlEncoded.isNotEmpty()) {
+                                try {
+                                    val decodedBytes = android.util.Base64.decode(pageUrlEncoded, android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP or android.util.Base64.NO_PADDING)
+                                    String(decodedBytes, Charsets.UTF_8)
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            } else {
+                                ""
+                            }
+                            VideoPlayerScreen(
+                                videoPath = filePath,
+                                referrerUrl = pageUrl,
+                                downloadEngine = browserViewModel.streamDownloadEngine,
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Unified Settings Panel
+                        composable("settings") {
+                            SettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = {
+                                    if (navController.previousBackStackEntry != null) {
+                                        navController.popBackStack()
+                                    } else {
+                                        navController.navigate("browser") {
+                                            popUpTo("browser") { inclusive = true }
+                                        }
+                                    }
+                                },
+                                onOpenUrl = { url ->
+                                    browserViewModel.loadUrl(url)
+                                    if (navController.previousBackStackEntry != null) {
+                                        navController.popBackStack("browser", inclusive = false)
+                                    } else {
+                                        navController.navigate("browser") {
+                                            popUpTo("browser") { inclusive = true }
+                                        }
+                                    }
+                                },
+                                onLanguageChanged = {
+                                    this@MainActivity.recreate()
+                                },
+                                onOpenAppearance = {
+                                    navController.navigate("appearance")
+                                },
+                                onOpenButtonsLayout = {
+                                    navController.navigate("buttons_layout")
+                                },
+                                onOpenTheme = {
+                                    navController.navigate("theme")
+                                },
+                                onOpenWallpapers = {
+                                    navController.navigate("wallpapers")
+                                },
+                                onOpenPrivacySecurity = {
+                                    navController.navigate("privacy_security")
+                                },
+                                onOpenPrivacyHub = {
+                                    navController.navigate("privacy_hub")
+                                },
+                                onOpenTabs = {
+                                    navController.navigate("settings_tabs")
+                                },
+                                onOpenAccessibility = {
+                                    navController.navigate("settings_accessibility")
+                                },
+                                onOpenSiteSettings = {
+                                    navController.navigate("settings_site")
+                                },
+                                onOpenPasswordManager = {
+                                    navController.navigate("password_manager")
+                                },
+                                onOpenDownloadSettings = {
+                                    navController.navigate("download_settings")
+                                },
+                                onOpenOfflineAi = {
+                                    navController.navigate("offline_ai")
+                                },
+                                onOpenSync = {
+                                    navController.navigate("omni_sync_showcase")
+                                },
+                                onOpenBackup = {
+                                    navController.navigate("backup")
+                                },
+                                onOpenWebApps = {
+                                    navController.navigate("web_apps")
+                                },
+                                onSettingsImported = {
+                                    this@MainActivity.recreate()
+                                }
+                            )
+                        }
+
+                        // Backup & Restore (user-selectable export/import)
+                        composable("backup") {
+                            com.devilnihad.nexabrowser.settings.BackupScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onRestored = { tabsRestored ->
+                                    // Many settings (layout, address bar, wallpaper…)
+                                    // are loaded once into the retained ViewModel, so a
+                                    // recreate() would not apply them. Relaunch the
+                                    // process so every restored value is read fresh.
+                                    // Do NOT overwrite the tab session when tabs were
+                                    // just restored, or the restored tabs are lost.
+                                    if (!tabsRestored) {
+                                        browserViewModel.saveTabs()
+                                        browserViewModel.saveTabGroups()
+                                    }
+                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                        val relaunch = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                                            addFlags(
+                                                android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                                                    android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                            )
+                                        }
+                                        if (relaunch != null) startActivity(relaunch)
+                                        Runtime.getRuntime().exit(0)
+                                    }, 400)
+                                }
+                            )
+                        }
+
+                        // Privacy and Security Settings Screen
+                        composable("privacy_security") {
+                            com.devilnihad.nexabrowser.settings.PrivacySecurityScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenAdBlockConfig = { navController.navigate("adblock_settings") },
+                                onOpenVisualBlockConfig = { navController.navigate("visual_block_settings") },
+                                onOpenUserAgentConfig = { navController.navigate("user_agent_settings") }
+                            )
+                        }
+
+                        // Download Settings Screen
+                        composable("download_settings") {
+                            com.devilnihad.nexabrowser.settings.DownloadSettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenDownloads = { navController.navigate("downloads") }
+                            )
+                        }
+
+                        // Omni Sync Showcase & Feature Screen
+                        composable("omni_sync_showcase") {
+                            com.devilnihad.nexabrowser.settings.OmniSyncShowcaseScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Offline AI Settings Screen (models, translation mode)
+                        composable("offline_ai") {
+                            com.devilnihad.nexabrowser.settings.OfflineAiSettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // User Agent Settings Screen
+                        composable("user_agent_settings") {
+                            com.devilnihad.nexabrowser.settings.UserAgentSettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Visual Block Settings Screen
+                        composable("visual_block_settings") {
+                            com.devilnihad.nexabrowser.settings.VisualBlockSettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Privacy Hub Screen
+                        composable("privacy_hub") {
+                            PrivacyHubScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // AdBlock & Filter Providers Screen
+                        composable("adblock_settings") {
+                            com.devilnihad.nexabrowser.settings.AdBlockSettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Tabs Settings Screen
+                        composable("settings_tabs") {
+                            com.devilnihad.nexabrowser.settings.TabsSettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Accessibility Settings Screen
+                        composable("settings_accessibility") {
+                            com.devilnihad.nexabrowser.settings.AccessibilitySettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Site Settings Screen
+                        composable("settings_site") {
+                            com.devilnihad.nexabrowser.settings.SiteSettingsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Preferences Settings Screen
+                        composable("appearance") {
+                            AppearanceScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenWallpapers = { navController.navigate("wallpapers") },
+                                onOpenButtonsLayout = { navController.navigate("buttons_layout") }
+                            )
+                        }
+
+                        // Buttons & Layout Settings Screen
+                        composable("buttons_layout") {
+                            ButtonsLayoutScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Theme Settings Screen
+                        composable("theme") {
+                            ThemeScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Wallpaper Settings Screen
+                        composable("wallpapers") {
+                            WallpaperScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // Browser History Screen
+                        composable("history") {
+                            HistoryScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenUrl = { url ->
+                                    browserViewModel.loadUrl(url)
+                                    if (navController.previousBackStackEntry != null) {
+                                        navController.popBackStack("browser", inclusive = false)
+                                    } else {
+                                        navController.navigate("browser") {
+                                            popUpTo("browser") { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+
+                        // Web Apps & PWAs Hub
+                        composable("web_apps") {
+                            com.devilnihad.nexabrowser.webapp.WebAppsScreen(
+                                browserViewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenUrl = { url ->
+                                    browserViewModel.loadUrl(url)
+                                    if (navController.previousBackStackEntry != null) {
+                                        navController.popBackStack("browser", inclusive = false)
+                                    } else {
+                                        navController.navigate("browser") {
+                                            popUpTo("browser") { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+
+                        // Browser Bookmarks Screen
+                        composable("bookmarks") {
+                            BookmarksScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onOpenUrl = { url ->
+                                    browserViewModel.loadUrl(url)
+                                    if (navController.previousBackStackEntry != null) {
+                                        navController.popBackStack("browser", inclusive = false)
+                                    } else {
+                                        navController.navigate("browser") {
+                                            popUpTo("browser") { inclusive = true }
+                                        }
+                                    }
+                                },
+                                onOpenImportPreview = {
+                                    navController.navigate("import_preview")
+                                }
+                            )
+                        }
+
+                        // Bookmark Import Preview Screen
+                        composable("import_preview") {
+                            com.devilnihad.nexabrowser.bookmarks.ImportPreviewScreen(
+                                viewModel = browserViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onImportComplete = { result ->
+                                    val message = if (result.success) {
+                                        "Imported ${result.addedBookmarks} bookmarks and ${result.addedFolders} folders"
+                                    } else {
+                                        "Import failed: ${result.errorMessage ?: "Unknown error"}"
+                                    }
+                                    android.widget.Toast.makeText(
+                                        this@MainActivity,
+                                        message,
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                    navController.popBackStack("bookmarks", inclusive = false)
+                                }
+                            )
+                        }
+
+                        // News Feed Screen
+                        composable("news") {
+                            com.devilnihad.nexabrowser.news.ui.NewsScreen(
+                                viewModel = browserViewModel,
+                                onNavigateHome = {
+                                    if (navController.previousBackStackEntry != null) {
+                                        navController.popBackStack()
+                                    } else {
+                                        navController.navigate("browser") {
+                                            popUpTo("browser") { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    }
+
+                    // Listen for external links opening while browser is default app,
+                    // pop back to the browser screen so the user sees the loaded page
+                    androidx.compose.runtime.LaunchedEffect(browserViewModel.openBrowserScreenEvent) {
+                        if (browserViewModel.openBrowserScreenEvent) {
+                            browserViewModel.consumeOpenBrowserScreenEvent()
+                            navController.popBackStack("browser", inclusive = false)
+                        }
+                    }
+
+                    // Listen for download notification taps to open the Downloads screen
+                    androidx.compose.runtime.LaunchedEffect(browserViewModel.openDownloadsScreenEvent) {
+                        if (browserViewModel.openDownloadsScreenEvent) {
+                            browserViewModel.consumeOpenDownloadsScreenEvent()
+                            try {
+                                navController.navigate("downloads") {
+                                    launchSingleTop = true
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("MainActivity", "Failed to navigate to downloads: $e")
+                            }
+                        }
+                    }
+                }
+            }
+            }
         }
-        dialog.setContentView(box)
-        dialog.show()
     }
 
-    private fun recreateCurrentTab() {
-        val current = tabs.current() ?: return
-        val url = current.url
-        val isPrivate = current.privateMode
-        closeTab(current.id, createReplacement = false)
-        createTab(isPrivate, if (url == "about:home" || url == "about:blank") "about:home" else url)
-    }
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val intentAction = intent.action
 
-    private fun closeTab(id: Long, createReplacement: Boolean = true) {
-        val tab = tabs.close(id) ?: return
-        tab.webView?.let { web ->
-            web.stopLoading(); webContainer.removeView(web); web.removeAllViews(); web.destroy(); tab.webView = null
+        val openDownloadsExtra = intent.getBooleanExtra("extra_open_downloads", false) ||
+            intentAction == "com.devilnihad.nexabrowser.ACTION_OPEN_DOWNLOADS"
+        if (openDownloadsExtra) {
+            browserViewModel.triggerOpenDownloadsScreen()
         }
-        if (tabs.size() == 0 && createReplacement) createTab(false) else tabs.current()?.id?.let(::switchTo)
-    }
 
-    private fun showBookmarks() {
-        val list = bookmarks.list()
-        if (list.isEmpty()) {
-            MaterialAlertDialogBuilder(this).setTitle(getString(R.string.bookmarks)).setMessage("No bookmarks yet.").setPositiveButton("OK", null).show(); return
+        val extensionShortcutId = intent.getStringExtra("extra_extension_id")
+        if (!extensionShortcutId.isNullOrBlank()) {
+            android.util.Log.i("MainActivity", "📌 Extension shortcut launch: $extensionShortcutId")
+            browserViewModel.handleExtensionShortcutLaunch(extensionShortcutId, this)
         }
-        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.bookmarks))
-            .setItems(list.map { it.title.ifBlank { it.url } }.toTypedArray()) { _, which -> tabs.current()?.url = list[which].url; currentWeb()?.loadUrl(list[which].url) }
-            .setNegativeButton("Close", null).show()
-    }
 
-    private fun showHistory() {
-        val list = history.list()
-        if (list.isEmpty()) {
-            MaterialAlertDialogBuilder(this).setTitle(getString(R.string.history)).setMessage("No browsing history yet.").setPositiveButton("OK", null).show(); return
+        val intentUrl = IntentUrlParser.parseIntent(intent, this)
+
+        val isExternal = intentAction == android.content.Intent.ACTION_VIEW ||
+            intentAction == android.content.Intent.ACTION_SEND ||
+            intentAction == android.content.Intent.ACTION_WEB_SEARCH ||
+            intentAction == android.content.Intent.ACTION_PROCESS_TEXT ||
+            (!intentUrl.isNullOrEmpty() && intentAction != null)
+
+        if (isExternal) {
+            android.util.Log.i("MainActivity", "🚀 onNewIntent external intent detected (action=$intentAction): $intentUrl")
+            browserViewModel.isExternalIntentLaunch = true
         }
-        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.history))
-            .setItems(list.map { it.title.ifBlank { it.url } }.toTypedArray()) { _, which -> tabs.current()?.url = list[which].url; currentWeb()?.loadUrl(list[which].url) }
-            .setNegativeButton("Close", null).setNeutralButton("Clear") { _, _ -> history.clear() }.show()
+        if (!intentUrl.isNullOrEmpty()) {
+            android.util.Log.i("MainActivity", "🎬 onNewIntent URL detected: $intentUrl")
+            if (browserViewModel.isNativePlayerEnabled && browserViewModel.isDirectVideoUrl(intentUrl)) {
+                android.util.Log.i("MainActivity", "🎬 Direct video detected in onNewIntent: $intentUrl. Launching native player...")
+                val callback = browserViewModel.onPlayVideoRequestReceived
+                if (callback != null) {
+                    callback.invoke(intentUrl, intentUrl)
+                } else {
+                    browserViewModel.pendingVideoUrl = intentUrl
+                }
+            } else if (intent.getBooleanExtra(com.devilnihad.nexabrowser.browser.IntentUrlParser.EXTRA_EXTENSION_SHORTCUT, false)) {
+                // Extension shortcut: always open its page in a fresh tab.
+                browserViewModel.createNewTab(this, intentUrl)
+                browserViewModel.triggerOpenBrowserScreen()
+            } else {
+                val activeTab = browserViewModel.tabs.find { it.id == browserViewModel.activeTabId }
+                val isHomeOrEmpty = activeTab == null || activeTab.url == "about:blank" || activeTab.url.isEmpty() || activeTab.url.startsWith("file:///android_asset/home")
+                if (isHomeOrEmpty) {
+                    browserViewModel.loadUrl(intentUrl)
+                } else {
+                    browserViewModel.createNewTab(this, intentUrl)
+                }
+                // Trigger navigation back to browser screen (e.g. when default browser opens a link from Settings)
+                browserViewModel.triggerOpenBrowserScreen()
+            }
+        }
     }
 
-    private fun findInPage() {
-        val input = TextInputEditText(this).apply { hint = getString(R.string.find_in_page) }
-        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.find_in_page)).setView(input)
-            .setPositiveButton("Find") { _, _ -> input.text?.toString()?.takeIf { it.isNotBlank() }?.let { currentWeb()?.findAllAsync(it) } }
-            .setNegativeButton("Cancel", null).show()
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        try {
+            when (level) {
+                // COMPLETE (80): system is killing background processes — suspend everything.
+                android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
+                    browserViewModel.onCriticalMemory()
+                    coil.Coil.imageLoader(this).memoryCache?.clear()
+                    android.util.Log.i("MainActivity", "🧹 onTrimMemory COMPLETE (80): all background tabs suspended, caches cleared")
+                }
+
+                // MODERATE (60): app is low in the cached background LRU — drop bitmaps.
+                android.content.ComponentCallbacks2.TRIM_MEMORY_MODERATE -> {
+                    browserViewModel.clearIconCache()
+                    coil.Coil.imageLoader(this).memoryCache?.clear()
+                    android.util.Log.d("MainActivity", "🧹 onTrimMemory MODERATE (60): icon + image caches cleared")
+                }
+
+                // BACKGROUND (40) / UI_HIDDEN (20): pressure has eased — restore live tab
+                // cap to device-appropriate default and clear Coil memory cache.
+                android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
+                android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN -> {
+                    browserViewModel.maxLiveTabs = browserViewModel.computeDefaultMaxLiveTabs()
+                    coil.Coil.imageLoader(this).memoryCache?.clear()
+                    android.util.Log.d("MainActivity", "🧹 onTrimMemory BACKGROUND/UI_HIDDEN ($level): image cache cleared, cap restored to ${browserViewModel.maxLiveTabs}")
+                }
+
+                // RUNNING_CRITICAL (15): process is still foreground but OS is desperate.
+                android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> {
+                    browserViewModel.onCriticalMemory()
+                    coil.Coil.imageLoader(this).memoryCache?.clear()
+                    android.util.Log.i("MainActivity", "🧹 onTrimMemory RUNNING_CRITICAL (15): all background tabs suspended, caches cleared")
+                }
+
+                // RUNNING_LOW (10): pressure building — halve live tab cap and keep it
+                // reduced until memory pressure eases (restored on BACKGROUND/UI_HIDDEN).
+                android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> {
+                    browserViewModel.maxLiveTabs = (browserViewModel.maxLiveTabs / 2).coerceAtLeast(2)
+                    browserViewModel.enforceSuspendLimit()
+                    coil.Coil.imageLoader(this).memoryCache?.clear()
+                    android.util.Log.i("MainActivity", "🧹 onTrimMemory RUNNING_LOW (10): cap tightened to ${browserViewModel.maxLiveTabs} live tabs")
+                }
+            }
+            // NOTE: System.gc() intentionally removed — it causes a stop-the-world pause
+            // under exactly the pressure where we can least afford it; the session
+            // suspensions above free far more memory than a GC hint ever could.
+        } catch (e: Throwable) {
+            // Catch Throwable so an OOM inside the trim path cannot crash the process.
+            android.util.Log.w("MainActivity", "onTrimMemory($level) failed: $e")
+        }
     }
 
-    private fun sharePage() {
-        val url = currentWeb()?.url ?: return
-        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, url) }, getString(R.string.share)))
+    override fun onLowMemory() {
+        super.onLowMemory()
+        try {
+            browserViewModel.onCriticalMemory()
+            coil.Coil.imageLoader(this).memoryCache?.clear()
+            android.util.Log.i("MainActivity", "🧹 onLowMemory: all background tabs suspended, caches cleared")
+        } catch (e: Throwable) {
+            android.util.Log.w("MainActivity", "onLowMemory failed: $e")
+        }
     }
 
-    private fun openDownloads() {
-        try { startActivity(Intent("android.intent.action.VIEW_DOWNLOADS")) }
-        catch (_: Exception) { startActivity(Intent(android.provider.Settings.ACTION_INTERNAL_STORAGE_SETTINGS)) }
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: android.content.res.Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        browserViewModel.isInPictureInPictureMode = isInPictureInPictureMode
     }
 
-    private fun showSettings() {
-        val names = arrayOf("Google", "Bing", "DuckDuckGo", "Brave Search", "Startpage", "Ecosia")
-        val urls = arrayOf("https://www.google.com/search?q=", "https://www.bing.com/search?q=", "https://duckduckgo.com/?q=", "https://search.brave.com/search?q=", "https://www.startpage.com/sp/search?query=", "https://www.ecosia.org/search?q=")
-        val selected = urls.indexOf(settings.searchEngine).coerceAtLeast(0)
-        MaterialAlertDialogBuilder(this).setTitle(getString(R.string.settings)).setSingleChoiceItems(names, selected) { dialog, which -> settings.searchEngine = urls[which]; dialog.dismiss() }
-            .setNeutralButton("Theme") { _, _ -> showThemePicker() }.setNegativeButton(getString(R.string.clear_data)) { _, _ -> clearBrowsingData() }.show()
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Session recovery lifecycle hooks
+    //
+    // These guard against blank-page / session-loss bugs when Android backgrounds,
+    // recreates, or kills the Omni process, or when the user returns from an external
+    // application (UPI/PayPal/banking/OAuth/camera/file picker).
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    override fun onPause() {
+        super.onPause()
+        SessionRecoveryDiagnostics.logActivityPause()
+        // Checkpoint session state before the app is backgrounded. If the process is
+        // killed while paused, this durable state is what survives.
+        browserViewModel.forceCheckpoint()
+        browserViewModel.recoveryCoordinator?.onActivityBackground()
     }
 
-    private fun showThemePicker() {
-        val names = arrayOf("System", "Light", "Dark")
-        val modes = intArrayOf(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, AppCompatDelegate.MODE_NIGHT_NO, AppCompatDelegate.MODE_NIGHT_YES)
-        MaterialAlertDialogBuilder(this).setTitle("Appearance").setSingleChoiceItems(names, modes.indexOf(currentNightMode()).coerceAtLeast(0)) { dialog, which -> settings.theme = names[which].lowercase(Locale.US); AppCompatDelegate.setDefaultNightMode(modes[which]); dialog.dismiss() }.show()
+    override fun onStop() {
+        super.onStop()
+        SessionRecoveryDiagnostics.logActivityStop()
+        // Final checkpoint before the Activity may be destroyed by the system.
+        browserViewModel.forceCheckpoint()
     }
 
-    private fun currentNightMode(): Int = when (settings.theme) { "light" -> AppCompatDelegate.MODE_NIGHT_NO; "dark" -> AppCompatDelegate.MODE_NIGHT_YES; else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM }
-    private fun applyTheme() { AppCompatDelegate.setDefaultNightMode(currentNightMode()) }
+    override fun onResume() {
+        super.onResume()
+        SessionRecoveryDiagnostics.logActivityResume(browserViewModel.isInExternalAppHandoff)
+        browserViewModel.recoveryCoordinator?.onActivityVisible()
 
-    private fun clearBrowsingData() {
-        CookieManager.getInstance().removeAllCookies(null); CookieManager.getInstance().flush(); tabs.all().forEach { it.webView?.clearCache(true) }; history.clear()
-    }
-
-    private fun openFileChooser(callback: ValueCallback<Array<Uri>>, intent: Intent) {
-        fileCallback?.onReceiveValue(null); fileCallback = callback
-        try { filePicker.launch(intent) } catch (_: Exception) { fileCallback?.onReceiveValue(null); fileCallback = null }
+        // If we returned from an external app, clear the handoff flag now and check
+        // the active tab's GeckoSession health. If the session is dead (process kill),
+        // trigger recovery from durable SessionState.
+        if (browserViewModel.isInExternalAppHandoff) {
+            browserViewModel.isInExternalAppHandoff = false
+            browserViewModel.recoveryCoordinator?.onExternalAppHandoffEnded()
+            val activeTab = browserViewModel.activeTab
+            if (activeTab != null && !activeTab.session.isOpen) {
+                // Session was killed while we were away → recover it.
+                val context = this
+                val runtime = browserViewModel.getGeckoRuntime(context)
+                var recoveredSession: org.mozilla.geckoview.GeckoSession? = null
+                browserViewModel.isRecoveringActiveTab = true
+                browserViewModel.lastRecoveryFailed = false
+                browserViewModel.recoveryCoordinator?.recoverTab(
+                    tabId = activeTab.id,
+                    context = context,
+                    runtime = runtime,
+                    url = activeTab.url,
+                    isIncognito = activeTab.isIncognito,
+                    isDesktopMode = browserViewModel.isDesktopMode,
+                    inMemoryState = activeTab.savedSessionState,
+                    createSession = { newSession ->
+                        recoveredSession = newSession
+                        val idx = browserViewModel.tabs.indexOfFirst { it.id == activeTab.id }
+                        if (idx != -1) {
+                            val newGen = browserViewModel.recoveryCoordinator?.nextGenerationId() ?: 0L
+                            browserViewModel.tabs[idx] = browserViewModel.tabs[idx].copy(
+                                session = newSession,
+                                isSuspended = false,
+                                sessionGenerationId = newGen
+                            )
+                            if (browserViewModel.activeTabId == activeTab.id) {
+                                browserViewModel.geckoSession = newSession
+                            }
+                            browserViewModel.setupTabSessionListeners(browserViewModel.tabs[idx], context)
+                        }
+                    },
+                    onComplete = { success, method ->
+                        browserViewModel.isRecoveringActiveTab = false
+                        if (success && recoveredSession != null) {
+                            if (browserViewModel.activeTabId == activeTab.id) {
+                                browserViewModel.geckoSession = recoveredSession!!
+                            }
+                            val gv = browserViewModel.activeGeckoViewRef?.get()
+                            if (gv != null) {
+                                gv.setSession(recoveredSession!!)
+                                recoveredSession!!.setActive(true)
+                            }
+                        } else {
+                            browserViewModel.lastRecoveryFailed = true
+                        }
+                    }
+                )
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        val savedTabs = tabs.all().filterNot { it.privateMode }
-        val urls = ArrayList<String>(savedTabs.map { it.url })
-        val currentIndex = savedTabs.indexOfFirst { it.id == tabs.currentId }.coerceAtLeast(0)
-        outState.putStringArrayList(STATE_TAB_URLS, urls); outState.putInt(STATE_CURRENT_TAB, currentIndex); super.onSaveInstanceState(outState)
+        super.onSaveInstanceState(outState)
+        // Persist lightweight, non-sensitive recovery metadata. This is NOT the primary
+        // persistence mechanism (that is the durable SessionState file); it supplements it
+        // for fast Activity recreation (config change) without a full process restart.
+        outState.putString("omni_active_tab_id", browserViewModel.activeTabId)
+        outState.putBoolean("omni_external_handoff", browserViewModel.isInExternalAppHandoff)
+        outState.putBoolean("omni_process_recreated", browserViewModel.isProcessRecreated)
+        SessionRecoveryDiagnostics.logActivitySaveInstanceState(browserViewModel.activeTabId)
     }
 
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val activeTabId = savedInstanceState.getString("omni_active_tab_id")
+        val processRecreated = savedInstanceState.getBoolean("omni_process_recreated", false)
+        if (processRecreated) {
+            browserViewModel.isProcessRecreated = true
+            browserViewModel.recoveryCoordinator?.onProcessRecreated()
+        }
+        SessionRecoveryDiagnostics.logActivityCreated(savedInstanceStatePresent = true, processRecreated = processRecreated)
+    }
+
+    // Note: Auto-PiP on home press was removed because requestedOrientation changes
+    // (from the fullscreen button) incorrectly triggered onUserLeaveHint on some devices,
+    // causing PiP to be entered instead of going fullscreen. Use the PiP button in the player.
+
     override fun onDestroy() {
-        fileCallback?.onReceiveValue(null); fileCallback = null
-        tabs.all().forEach { tab -> tab.webView?.let { web -> web.stopLoading(); webContainer.removeView(web); web.removeAllViews(); web.destroy(); tab.webView = null } }
+        if (activeActivity?.get() == this) {
+            activeActivity = null
+        }
         super.onDestroy()
     }
 
-    private fun resolveColor(attr: Int): Int = com.google.android.material.color.MaterialColors.getColor(this, attr, Color.WHITE)
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+    companion object {
+        private var activeActivity: java.lang.ref.WeakReference<MainActivity>? = null
 
-    companion object { private const val STATE_TAB_URLS = "nexa_urls"; private const val STATE_CURRENT_TAB = "nexa_current" }
+        fun getActiveActivity(): MainActivity? {
+            return activeActivity?.get()
+        }
+    }
+}
+
+/**
+ * Graceful fallback screen shown when the GeckoView engine fails to initialize
+ * (typically in release builds where R8/ProGuard may strip reflection-loaded classes).
+ * Prevents the opaque black-screen crash-loop by surfacing a clear, actionable error.
+ */
+@Keep
+@Composable
+private fun GeckoErrorScreen(onRetry: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Warning,
+                contentDescription = null,
+                tint = Color(0xFFFF6B6B),
+                modifier = Modifier.size(64.dp)
+            )
+            Text(
+                text = "Browser engine failed to start",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "The rendering engine could not be initialized. This usually happens " +
+                        "after a corrupted install or when system resources are low. " +
+                        "Tap retry, or reinstall the app if the problem persists.",
+                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4F8CFF)
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text("Retry")
+            }
+        }
+    }
 }
