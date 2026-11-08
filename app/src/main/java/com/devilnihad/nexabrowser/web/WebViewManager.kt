@@ -31,17 +31,13 @@ class WebViewManager(
     private val onProgress: (Int) -> Unit,
     private val onFileChooser: (ValueCallback<Array<Uri>>, Intent) -> Unit
 ) {
-    companion object {
-        const val PERMISSION_REQUEST_CODE = 901
-    }
-
     @SuppressLint("SetJavaScriptEnabled")
     fun configure(web: WebView, desktop: Boolean) {
         val settings = web.settings
         settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
+        settings.domStorageEnabled = !privateMode
         settings.loadsImagesAutomatically = true
-        settings.javaScriptCanOpenWindowsAutomatically = true
+        settings.javaScriptCanOpenWindowsAutomatically = false
         settings.setSupportMultipleWindows(false)
         settings.mediaPlaybackRequiresUserGesture = true
         settings.allowFileAccess = false
@@ -57,16 +53,20 @@ class WebViewManager(
             WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_AUTO)
         }
 
+        if (privateMode) {
+            web.clearHistory()
+            web.clearCache(true)
+            CookieManager.getInstance().setAcceptThirdPartyCookies(web, false)
+        }
+
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
-                return if (uri.scheme == "http" || uri.scheme == "https") {
-                    false
-                } else {
-                    try {
-                        activity.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                    } catch (_: Exception) {
-                    }
+                if (uri.scheme == "http" || uri.scheme == "https") return false
+                return try {
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    true
+                } catch (_: Exception) {
                     true
                 }
             }
@@ -82,7 +82,11 @@ class WebViewManager(
                 }
             }
 
-            override fun onReceivedSslError(view: WebView, handler: android.webkit.SslErrorHandler, error: android.net.http.SslError) {
+            override fun onReceivedSslError(
+                view: WebView,
+                handler: android.webkit.SslErrorHandler,
+                error: android.net.http.SslError
+            ) {
                 handler.cancel()
             }
         }
@@ -96,6 +100,8 @@ class WebViewManager(
                 onTitle(title)
             }
 
+            override fun onCreateWindow(view: WebView, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message): Boolean = false
+
             override fun onShowFileChooser(
                 view: WebView,
                 callback: ValueCallback<Array<Uri>>,
@@ -105,49 +111,22 @@ class WebViewManager(
                 return true
             }
 
+            // Web-origin camera, microphone and location requests are denied until the app
+            // has a complete runtime-permission consent flow.
             override fun onPermissionRequest(request: PermissionRequest) {
-                activity.runOnUiThread {
-                    val resources = request.resources.toSet()
-                    val permissions = mutableListOf<String>()
-                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in resources) permissions += Manifest.permission.CAMERA
-                    if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in resources) permissions += Manifest.permission.RECORD_AUDIO
-
-                    if (permissions.isEmpty()) {
-                        request.deny()
-                        return@runOnUiThread
-                    }
-
-                    val missing = permissions.filter {
-                        ActivityCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
-                    }
-
-                    if (missing.isEmpty()) {
-                        request.grant(request.resources)
-                    } else {
-                        activity.requestPermissions(missing.toTypedArray(), PERMISSION_REQUEST_CODE)
-                        PendingPermission.request = request
-                    }
-                }
+                request.deny()
             }
 
             override fun onGeolocationPermissionsShowPrompt(
                 origin: String,
                 callback: GeolocationPermissions.Callback
             ) {
-                if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    callback.invoke(origin, true, false)
-                } else {
-                    PendingPermission.locationCallback = callback
-                    PendingPermission.locationOrigin = origin
-                    activity.requestPermissions(
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                        PERMISSION_REQUEST_CODE + 1
-                    )
-                }
+                callback.invoke(origin, false, false)
             }
         }
 
         web.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+            if (url.isNullOrBlank()) return@setDownloadListener
             try {
                 val request = DownloadManager.Request(Uri.parse(url))
                     .setTitle(URLUtil.guessFileName(url, contentDisposition, mimeType))
@@ -155,21 +134,14 @@ class WebViewManager(
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .setMimeType(mimeType)
                     .addRequestHeader("User-Agent", userAgent)
-                activity.getSystemService(DownloadManager::class.java).enqueue(request)
+                val manager = activity.getSystemService(DownloadManager::class.java)
+                manager?.enqueue(request)
             } catch (_: Exception) {
+                // Ignore malformed download links or unavailable system download service.
             }
         }
     }
 
-    private fun desktopUserAgent(base: String): String {
-        return base
-            .replace("Mobile", "")
-            .replace("Android", "X11; Linux x86_64")
-    }
-
-    object PendingPermission {
-        var request: PermissionRequest? = null
-        var locationCallback: GeolocationPermissions.Callback? = null
-        var locationOrigin: String? = null
-    }
+    private fun desktopUserAgent(base: String): String =
+        base.replace("Mobile", "").replace("Android", "X11; Linux x86_64")
 }

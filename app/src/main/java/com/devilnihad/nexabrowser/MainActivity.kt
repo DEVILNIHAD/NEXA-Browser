@@ -18,16 +18,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.WindowCompat
+import com.devilnihad.nexabrowser.data.BookmarkManager
+import com.devilnihad.nexabrowser.data.HistoryManager
+import com.devilnihad.nexabrowser.data.SettingsManager
+import com.devilnihad.nexabrowser.data.Tab
+import com.devilnihad.nexabrowser.data.TabManager
+import com.devilnihad.nexabrowser.utils.UrlResolver
+import com.devilnihad.nexabrowser.web.WebViewManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import com.devilnihad.nexabrowser.data.BookmarkManager
-import com.devilnihad.nexabrowser.data.HistoryManager
-import com.devilnihad.nexabrowser.data.SettingsManager
-import com.devilnihad.nexabrowser.data.TabManager
-import com.devilnihad.nexabrowser.utils.UrlResolver
-import com.devilnihad.nexabrowser.web.WebViewManager
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -42,15 +43,14 @@ class MainActivity : AppCompatActivity() {
     private val tabs = TabManager()
     private var fileCallback: ValueCallback<Array<Uri>>? = null
 
-    private val filePicker =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            fileCallback?.onReceiveValue(
-                if (result.resultCode == Activity.RESULT_OK) {
-                    result.data?.data?.let { arrayOf(it) }
-                } else null
-            )
-            fileCallback = null
-        }
+    private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val callback = fileCallback
+        fileCallback = null
+        val uri = result.data?.data
+        callback?.onReceiveValue(
+            if (result.resultCode == Activity.RESULT_OK && uri != null) arrayOf(uri) else null
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,8 +60,9 @@ class MainActivity : AppCompatActivity() {
         settings = SettingsManager(this)
         applyTheme()
         buildUi()
-        val restoredUrls = savedInstanceState?.getStringArrayList("nexa_urls")
-        val restoredCurrent = savedInstanceState?.getInt("nexa_current", 0) ?: 0
+
+        val restoredUrls = savedInstanceState?.getStringArrayList(STATE_TAB_URLS)
+        val restoredCurrent = savedInstanceState?.getInt(STATE_CURRENT_TAB, 0) ?: 0
         if (restoredUrls.isNullOrEmpty()) {
             createTab(false)
         } else {
@@ -72,9 +73,9 @@ class MainActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val current = tabs.current()
-                val web = current?.webView
+                val currentWeb = current?.webView
                 when {
-                    web?.canGoBack() == true -> web.goBack()
+                    currentWeb?.canGoBack() == true -> currentWeb.goBack()
                     current != null && tabs.size() > 1 -> closeTab(current.id)
                     else -> finish()
                 }
@@ -87,25 +88,21 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(10), dp(28), dp(10), dp(8))
         }
-
         val top = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-
         address = TextInputEditText(this).apply {
             hint = getString(R.string.search_hint)
             setSingleLine(true)
             setPadding(dp(18), 0, dp(18), 0)
             textSize = 16f
         }
-
         val menu = MaterialButton(this).apply {
             text = "⋮"
             minWidth = dp(48)
             setOnClickListener { showMenu() }
         }
-
         top.addView(address, LinearLayout.LayoutParams(0, dp(54), 1f).apply {
             setMargins(0, 0, dp(8), 0)
         })
@@ -115,7 +112,6 @@ class MainActivity : AppCompatActivity() {
             setBackgroundColor(resolveColor(com.google.android.material.R.attr.colorPrimary))
             visibility = View.GONE
         }
-
         webContainer = FrameLayout(this)
         root.addView(top)
         root.addView(progress, LinearLayout.LayoutParams(-1, dp(2)))
@@ -134,14 +130,11 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             orientation = LinearLayout.HORIZONTAL
         }
-
-        fun button(label: String, action: () -> Unit) =
-            MaterialButton(this).apply {
-                text = label
-                minWidth = dp(52)
-                setOnClickListener { action() }
-            }
-
+        fun button(label: String, action: () -> Unit) = MaterialButton(this).apply {
+            text = label
+            minWidth = dp(48)
+            setOnClickListener { action() }
+        }
         bar.addView(button("‹") { currentWeb()?.let { if (it.canGoBack()) it.goBack() } })
         bar.addView(button("›") { currentWeb()?.let { if (it.canGoForward()) it.goForward() } })
         bar.addView(button("+") { createTab(false) })
@@ -177,10 +170,7 @@ class MainActivity : AppCompatActivity() {
                     progress.scaleX = value / 100f
                 }
             },
-            onFileChooser = { callback, intent ->
-                fileCallback = callback
-                filePicker.launch(intent)
-            }
+            onFileChooser = { callback, intent -> openFileChooser(callback, intent) }
         ).configure(web, settings.desktopSite)
     }
 
@@ -190,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             tab.webView?.visibility = if (tab.id == id) View.VISIBLE else View.GONE
         }
         val tab = tabs.current() ?: return
-        address.setText(if (tab.url == "about:home") "" else tab.url)
+        address.setText(if (tab.url == "about:home" || tab.url == "about:blank") "" else tab.url)
         progress.visibility = View.GONE
     }
 
@@ -198,10 +188,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadHome() {
         val html = """
-            <!doctype html>
-            <html>
-            <head>
-            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
             <style>
             body{font-family:sans-serif;background:#f7f7fb;color:#15151c;padding:30px 22px}
             .brand{font-size:44px;font-weight:800;letter-spacing:-2px;margin-top:30px}
@@ -210,28 +197,24 @@ class MainActivity : AppCompatActivity() {
             .item{padding:20px;border-radius:20px;background:#fff;text-decoration:none;color:inherit}
             .name{font-weight:700}.url{font-size:12px;opacity:.55;margin-top:5px}
             @media(prefers-color-scheme:dark){body{background:#0b0b10;color:#fff}.item{background:#17171f}}
-            </style>
-            </head>
-            <body>
-            <div class="brand">NEXA</div>
-            <div class="tag">Fast. Private. Yours.</div>
+            </style></head><body><div class="brand">NEXA</div><div class="tag">Fast. Private. Yours.</div>
             <div class="grid">
             <a class="item" href="https://www.google.com"><div class="name">Google</div><div class="url">google.com</div></a>
             <a class="item" href="https://www.youtube.com"><div class="name">YouTube</div><div class="url">youtube.com</div></a>
             <a class="item" href="https://github.com"><div class="name">GitHub</div><div class="url">github.com</div></a>
             <a class="item" href="https://wikipedia.org"><div class="name">Wikipedia</div><div class="url">wikipedia.org</div></a>
-            </div>
-            </body>
-            </html>
+            </div></body></html>
         """.trimIndent()
-        currentWeb()?.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+        val tab = tabs.current() ?: return
+        tab.url = "about:home"
+        tab.webView?.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
         address.setText("")
     }
 
     private fun loadAddress() {
-        currentWeb()?.loadUrl(
-            UrlResolver.resolve(address.text?.toString().orEmpty(), settings.searchEngine)
-        )
+        val target = UrlResolver.resolve(address.text?.toString().orEmpty(), settings.searchEngine)
+        tabs.current()?.url = target
+        currentWeb()?.loadUrl(target)
     }
 
     private fun showTabs() {
@@ -240,13 +223,11 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(20), dp(20), dp(40))
         }
-
         box.addView(TextView(this).apply {
             text = "Tabs (${tabs.size()})"
             textSize = 22f
             setPadding(0, 0, 0, dp(18))
         })
-
         tabs.all().forEach { tab ->
             box.addView(MaterialButton(this).apply {
                 text = "${if (tab.privateMode) "Private · " else ""}${tab.title}\n${tab.url}"
@@ -257,7 +238,6 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
-
         box.addView(MaterialButton(this).apply {
             text = "＋ New tab"
             setOnClickListener {
@@ -265,7 +245,6 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
         })
-
         dialog.setContentView(box)
         dialog.show()
     }
@@ -276,11 +255,9 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(20), dp(20), dp(40))
         }
-
         listOf(
-            "New tab", "New private tab", "Bookmarks", "History",
-            "Downloads", "Find in page", "Desktop site", "Share",
-            "Add bookmark", "Settings"
+            "New tab", "New private tab", "Bookmarks", "History", "Downloads",
+            "Find in page", "Desktop site", "Share", "Add bookmark", "Settings"
         ).forEach { label ->
             box.addView(MaterialButton(this).apply {
                 text = label
@@ -304,7 +281,6 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
-
         dialog.setContentView(box)
         dialog.show()
     }
@@ -312,19 +288,20 @@ class MainActivity : AppCompatActivity() {
     private fun recreateCurrentTab() {
         val current = tabs.current() ?: return
         val url = current.url
-        val privateMode = current.privateMode
+        val isPrivate = current.privateMode
         closeTab(current.id, createReplacement = false)
-        createTab(privateMode, if (url == "about:home") "about:home" else url)
+        createTab(isPrivate, if (url == "about:home" || url == "about:blank") "about:home" else url)
     }
 
     private fun closeTab(id: Long, createReplacement: Boolean = true) {
         val tab = tabs.close(id) ?: return
-        tab.webView?.apply {
-            stopLoading()
-            removeAllViews()
-            destroy()
+        tab.webView?.let { web ->
+            web.stopLoading()
+            webContainer.removeView(web)
+            web.removeAllViews()
+            web.destroy()
+            tab.webView = null
         }
-
         if (tabs.size() == 0 && createReplacement) {
             createTab(false)
         } else {
@@ -335,16 +312,14 @@ class MainActivity : AppCompatActivity() {
     private fun showBookmarks() {
         val list = bookmarks.list()
         if (list.isEmpty()) {
-            MaterialAlertDialogBuilder(this)
-                .setTitle(getString(R.string.bookmarks))
-                .setMessage("No bookmarks yet.")
-                .setPositiveButton("OK", null)
-                .show()
+            MaterialAlertDialogBuilder(this).setTitle(getString(R.string.bookmarks))
+                .setMessage("No bookmarks yet.").setPositiveButton("OK", null).show()
             return
         }
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.bookmarks))
-            .setItems(list.map { it.title }.toTypedArray()) { _, which ->
+            .setItems(list.map { it.title.ifBlank { it.url } }.toTypedArray()) { _, which ->
+                tabs.current()?.url = list[which].url
                 currentWeb()?.loadUrl(list[which].url)
             }
             .setNegativeButton("Close", null)
@@ -353,9 +328,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun showHistory() {
         val list = history.list()
+        if (list.isEmpty()) {
+            MaterialAlertDialogBuilder(this).setTitle(getString(R.string.history))
+                .setMessage("No browsing history yet.").setPositiveButton("OK", null).show()
+            return
+        }
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.history))
-            .setItems(list.map { it.title }.toTypedArray()) { _, which ->
+            .setItems(list.map { it.title.ifBlank { it.url } }.toTypedArray()) { _, which ->
+                tabs.current()?.url = list[which].url
                 currentWeb()?.loadUrl(list[which].url)
             }
             .setNegativeButton("Close", null)
@@ -369,7 +350,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.find_in_page))
             .setView(input)
             .setPositiveButton("Find") { _, _ ->
-                currentWeb()?.findAllAsync(input.text?.toString().orEmpty())
+                input.text?.toString()?.takeIf { it.isNotBlank() }?.let { currentWeb()?.findAllAsync(it) }
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -402,7 +383,6 @@ class MainActivity : AppCompatActivity() {
             "https://www.ecosia.org/search?q="
         )
         val selected = urls.indexOf(settings.searchEngine).coerceAtLeast(0)
-
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.settings))
             .setSingleChoiceItems(names, selected) { dialog, which ->
@@ -448,24 +428,36 @@ class MainActivity : AppCompatActivity() {
         history.clear()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        val urls = ArrayList<String>()
-        var currentIndex = 0
-        tabs.all().forEachIndexed { index, tab ->
-            if (!tab.privateMode) urls.add(tab.url)
-            if (tab.id == tabs.currentId) currentIndex = index
+    private fun openFileChooser(callback: ValueCallback<Array<Uri>>, intent: Intent) {
+        fileCallback?.onReceiveValue(null)
+        fileCallback = callback
+        try {
+            filePicker.launch(intent)
+        } catch (_: Exception) {
+            fileCallback?.onReceiveValue(null)
+            fileCallback = null
         }
-        outState.putStringArrayList("nexa_urls", urls)
-        outState.putInt("nexa_current", currentIndex)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        val savedTabs = tabs.all().filterNot { it.privateMode }
+        val urls = ArrayList<String>(savedTabs.map { it.url })
+        val currentIndex = savedTabs.indexOfFirst { it.id == tabs.currentId }.coerceAtLeast(0)
+        outState.putStringArrayList(STATE_TAB_URLS, urls)
+        outState.putInt(STATE_CURRENT_TAB, currentIndex)
         super.onSaveInstanceState(outState)
     }
 
     override fun onDestroy() {
+        fileCallback?.onReceiveValue(null)
+        fileCallback = null
         tabs.all().forEach { tab ->
-            tab.webView?.apply {
-                stopLoading()
-                removeAllViews()
-                destroy()
+            tab.webView?.let { web ->
+                web.stopLoading()
+                webContainer.removeView(web)
+                web.removeAllViews()
+                web.destroy()
+                tab.webView = null
             }
         }
         super.onDestroy()
@@ -474,6 +466,10 @@ class MainActivity : AppCompatActivity() {
     private fun resolveColor(attr: Int): Int =
         com.google.android.material.color.MaterialColors.getColor(this, attr, Color.WHITE)
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    companion object {
+        private const val STATE_TAB_URLS = "nexa_urls"
+        private const val STATE_CURRENT_TAB = "nexa_current"
+    }
 }
