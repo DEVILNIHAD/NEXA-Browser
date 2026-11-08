@@ -1,3 +1,11 @@
 package com.devilnihad.nexabrowser.data
 
-data class Tab(val id: Long, var url: String, var title: String = "New tab", var favicon: String? = null, val privateMode: Boolean = false)
+import android.webkit.WebView
+
+data class Tab(
+    val id: Long,
+    var url: String = "about:blank",
+    var title: String = "New tab",
+    val privateMode: Boolean = false,
+    var webView: WebView? = null
+)

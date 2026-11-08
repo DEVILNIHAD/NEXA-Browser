@@ -1,1 +1,1 @@
-# NEXA Browser release rules. Keep AndroidX/WebKit defaults.
+# NEXA Browser release rules. Keep empty unless a library requires custom rules.

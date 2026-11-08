@@ -4,10 +4,36 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 
-class HistoryManager(private val context: Context) {
-    private val prefs = context.getSharedPreferences("history", Context.MODE_PRIVATE)
+class HistoryManager(context: Context) {
     data class Entry(val title: String, val url: String, val time: Long)
-    fun add(title: String, url: String) { if (url.startsWith("about:")) return; val a = JSONArray(prefs.getString("items", "[]")); val out = JSONArray(); out.put(JSONObject().apply { put("title", title); put("url", url); put("time", System.currentTimeMillis()) }); for (i in 0 until minOf(a.length(), 199)) out.put(a.getJSONObject(i)); prefs.edit().putString("items", out.toString()).apply() }
-    fun list(): List<Entry> { val a = JSONArray(prefs.getString("items", "[]")); return buildList { for (i in 0 until a.length()) { val o = a.getJSONObject(i); add(Entry(o.optString("title"), o.optString("url"), o.optLong("time"))) } } }
-    fun clear() { prefs.edit().remove("items").apply() }
+
+    private val prefs = context.getSharedPreferences("nexa_history", Context.MODE_PRIVATE)
+
+    fun add(title: String, url: String) {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return
+        val source = JSONArray(prefs.getString("items", "[]"))
+        val result = JSONArray()
+        result.put(JSONObject().apply {
+            put("title", title.ifBlank { url })
+            put("url", url)
+            put("time", System.currentTimeMillis())
+        })
+        for (i in 0 until minOf(source.length(), 199)) {
+            val old = source.getJSONObject(i)
+            if (old.optString("url") != url) result.put(old)
+        }
+        prefs.edit().putString("items", result.toString()).apply()
+    }
+
+    fun list(): List<Entry> {
+        val array = JSONArray(prefs.getString("items", "[]"))
+        return buildList {
+            for (i in 0 until array.length()) {
+                val item = array.getJSONObject(i)
+                add(Entry(item.optString("title"), item.optString("url"), item.optLong("time")))
+            }
+        }
+    }
+
+    fun clear() = prefs.edit().remove("items").apply()
 }
