@@ -31,4 +31,9 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowBackground">@android:color/black</item>
     </style>
+
+    <!-- Compatibility aliases used by MainActivity's dynamic theme selection. -->
+    <style name="Theme.OmniBrowser.Light" parent="Theme.NexaBrowser.Light" />
+    <style name="Theme.OmniBrowser.Dark" parent="Theme.NexaBrowser.Dark" />
+    <style name="Theme.OmniBrowser.Amoled" parent="Theme.NexaBrowser.Amoled" />
 </resources>
